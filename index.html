@@ -16,17 +16,32 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
+
+  <!-- Shim for process.env used in the Gemini SDK and elsewhere -->
+  <script>
+    window.process = { 
+      env: { 
+        API_KEY: "" // This is usually injected by the deployment environment
+      } 
+    };
+  </script>
+
+  <!-- ES Module Shims: Polyfill for import maps in older browsers -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.1/dist/es-module-shims.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19.0.0",
+      "react/": "https://esm.sh/react@19.0.0/",
+      "react-dom": "https://esm.sh/react-dom@19.0.0",
+      "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+      "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+      "@google/genai": "https://esm.sh/@google/genai@1.3.0",
+      "recharts": "https://esm.sh/recharts@2.15.0"
+    }
   }
-}
-</script>
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-50 min-h-screen">
   <div id="root"></div>

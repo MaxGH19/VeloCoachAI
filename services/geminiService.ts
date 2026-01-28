@@ -2,9 +2,23 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to safely get the API key
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("API_KEY ist nicht konfiguriert. Bitte stellen Sie sicher, dass der API-Key in der Umgebung hinterlegt ist.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   const prompt = `
     Erstelle einen professionellen 4-Wochen-Radtrainingsplan für einen Amateursportler mit folgendem Profil:
     - Ziel: ${profile.goal}
