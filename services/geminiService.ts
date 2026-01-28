@@ -3,13 +3,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  const apiKey = (window as any).process?.env?.API_KEY || "";
-  
-  if (!apiKey) {
-    throw new Error("API-Key nicht gefunden. Bitte konfiguriere deinen Gemini API-Key.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Use the pre-configured process.env.API_KEY directly as required by the SDK guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
     Erstelle einen professionellen, hochintensiven 4-Wochen-Radtrainingsplan für einen Amateursportler:
@@ -81,8 +76,10 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
     const text = response.text;
     if (!text) throw new Error("Keine Daten von der KI empfangen.");
+    
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
+    console.error("Gemini Generation Error:", err);
     throw new Error(`KI-Generierung fehlgeschlagen: ${err.message}`);
   }
 }
