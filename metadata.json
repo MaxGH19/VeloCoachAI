@@ -1,0 +1,5 @@
+{
+  "name": "VeloCoach AI",
+  "description": "A professional-grade training plan generator for amateur cyclists, powered by Gemini 3 Pro to create periodized, personalized cycling programs.",
+  "requestFramePermissions": []
+}
