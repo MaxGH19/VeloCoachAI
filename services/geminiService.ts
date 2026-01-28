@@ -1,10 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // Use the pre-configured process.env.API_KEY directly as required by the SDK guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   const prompt = `
     Erstelle einen professionellen, hochintensiven 4-Wochen-Radtrainingsplan für einen Amateursportler:
