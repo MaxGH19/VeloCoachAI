@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import Hero from './components/Hero';
-import Questionnaire from './components/Questionnaire';
-import TrainingPlanDisplay from './components/TrainingPlanDisplay';
-import Loader from './components/Loader';
-import { UserProfile, FullTrainingPlan } from './types';
-import { generateTrainingPlan } from './services/geminiService';
+import Hero from './components/Hero.tsx';
+import Questionnaire from './components/Questionnaire.tsx';
+import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
+import Loader from './components/Loader.tsx';
+import { UserProfile, FullTrainingPlan } from './types.ts';
+import { generateTrainingPlan } from './services/geminiService.ts';
 
 enum AppState {
   LANDING,

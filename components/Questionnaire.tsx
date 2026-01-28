@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { UserProfile, TrainingGoal, FitnessLevel, Equipment } from '../types';
-import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS } from '../constants';
+import { UserProfile, TrainingGoal, FitnessLevel, Equipment } from '../types.ts';
+import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS } from '../constants.ts';
 
 interface QuestionnaireProps {
   onSubmit: (profile: UserProfile) => void;

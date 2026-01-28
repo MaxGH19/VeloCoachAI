@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { FullTrainingPlan, WeeklyPlan, TrainingSession } from '../types';
+import { FullTrainingPlan, WeeklyPlan, TrainingSession } from '../types.ts';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface PlanDisplayProps {
@@ -133,7 +133,6 @@ const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
     }
   };
 
-  // Fix: Use casting to string to bypass TypeScript's narrowing which would otherwise prevent comparison with values outside the defined union.
   const isRest = (session.intensity as string) === 'Rest' || (session.intensity as string) === 'Ruhetag' || session.type.toLowerCase().includes('rest') || session.type.toLowerCase().includes('ruhe');
 
   return (

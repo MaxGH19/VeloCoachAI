@@ -1,5 +1,5 @@
 
-import { TrainingGoal, FitnessLevel, Equipment } from './types';
+import { TrainingGoal, FitnessLevel, Equipment } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [
   { value: 'Endurance', label: 'Ausdauer / Century', icon: 'fa-route' },
