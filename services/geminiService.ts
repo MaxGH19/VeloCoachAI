@@ -6,16 +6,17 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
   const prompt = `
-    Generate a professional 4-week cycling training plan for an amateur cyclist with the following profile:
-    - Goal: ${profile.goal}
+    Erstelle einen professionellen 4-Wochen-Radtrainingsplan für einen Amateursportler mit folgendem Profil:
+    - Ziel: ${profile.goal}
     - Level: ${profile.level}
-    - Availability: ${profile.weeklyHours} hours per week, on days: ${profile.availableDays.join(', ')}
-    - Equipment: ${profile.equipment.join(', ')}
-    - Age: ${profile.age}, Weight: ${profile.weight}kg
+    - Verfügbarkeit: ${profile.weeklyHours} Stunden pro Woche, an den Tagen: ${profile.availableDays.join(', ')}
+    - Ausrüstung: ${profile.equipment.join(', ')}
+    - Alter: ${profile.age}, Gewicht: ${profile.weight}kg
 
-    The plan should follow modern periodization principles (Base, Build, or Peak depending on profile).
-    Include specific intervals if they have a power meter. 
-    Ensure rest days are allocated if not selected as available.
+    WICHTIG: Antworte AUSSCHLIESSLICH auf DEUTSCH.
+    Der Plan sollte modernen Periodisierungsprinzipien folgen (Base, Build oder Peak).
+    Integriere spezifische Intervalle, falls ein Wattmessgerät vorhanden ist.
+    Stelle sicher, dass Ruhetage (Rest Days) eingeplant werden, wenn Tage nicht als verfügbar markiert wurden.
   `;
 
   const response = await ai.models.generateContent({
@@ -70,7 +71,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
   });
 
   const text = response.text;
-  if (!text) throw new Error("No response from AI");
+  if (!text) throw new Error("Keine Antwort von der KI erhalten");
   
   return JSON.parse(text) as FullTrainingPlan;
 }

@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 const Loader: React.FC = () => {
   const [tipIndex, setTipIndex] = useState(0);
   const tips = [
-    "Analyzing your goals...",
-    "Optimizing recovery periods...",
-    "Calculating TSS loads...",
-    "Structuring interval blocks...",
-    "Simulating physiological adaptations...",
-    "Finalizing your periodized plan..."
+    "Analysiere deine Ziele...",
+    "Optimiere Erholungsphasen...",
+    "Berechne TSS-Belastungen...",
+    "Strukturiere Intervallblöcke...",
+    "Simuliere physiologische Anpassungen...",
+    "Finalisiere deinen periodisierten Plan..."
   ];
 
   useEffect(() => {
@@ -28,10 +28,10 @@ const Loader: React.FC = () => {
           <i className="fas fa-bicycle text-4xl text-emerald-500 animate-pulse"></i>
         </div>
       </div>
-      <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent">
-        VeloCoach is working
+      <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent text-center">
+        VeloCoach arbeitet für dich
       </h2>
-      <p className="text-emerald-400 font-mono tracking-widest text-sm uppercase animate-pulse">
+      <p className="text-emerald-400 font-mono tracking-widest text-sm uppercase animate-pulse text-center">
         {tips[tipIndex]}
       </p>
       

@@ -30,8 +30,8 @@ const App: React.FC = () => {
       setPlan(generatedPlan);
       setState(AppState.DISPLAY);
     } catch (err) {
-      console.error("Failed to generate plan:", err);
-      setError("We encountered an issue generating your plan. Please try again.");
+      console.error("Fehler bei der Planerstellung:", err);
+      setError("Es gab ein Problem bei der Erstellung deines Plans. Bitte versuche es erneut.");
       setState(AppState.LANDING);
     }
   };
@@ -52,9 +52,9 @@ const App: React.FC = () => {
             <span className="font-extrabold text-xl tracking-tighter">VELOCOACH <span className="text-emerald-500">AI</span></span>
           </div>
           <div className="hidden md:flex gap-8 text-sm font-medium text-slate-400">
-            <a href="#" className="hover:text-emerald-400 transition-colors">Methodology</a>
+            <a href="#" className="hover:text-emerald-400 transition-colors">Methodik</a>
             <a href="#" className="hover:text-emerald-400 transition-colors">Community</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">Support</a>
+            <a href="#" className="hover:text-emerald-400 transition-colors">Hilfe</a>
           </div>
           <div>
             <button className="px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-bold hover:bg-emerald-500/20 transition-all">
@@ -94,12 +94,12 @@ const App: React.FC = () => {
             <span className="font-bold text-slate-300">VELOCOACH AI</span>
           </div>
           <div className="flex gap-6 text-slate-500 text-sm">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Cookies</a>
+            <a href="#" className="hover:text-white transition-colors">Datenschutz</a>
+            <a href="#" className="hover:text-white transition-colors">AGB</a>
+            <a href="#" className="hover:text-white transition-colors">Impressum</a>
           </div>
           <div className="text-slate-600 text-xs">
-            © 2024 VeloCoach AI. Built with Gemini 3 Pro.
+            © 2024 VeloCoach AI. Erstellt mit Gemini 3 Pro.
           </div>
         </div>
       </footer>
