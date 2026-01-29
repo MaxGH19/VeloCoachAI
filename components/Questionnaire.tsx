@@ -14,8 +14,8 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
   const [metricsKnowledge, setMetricsKnowledge] = useState<MetricsKnowledge>('both');
   const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean }>({});
   const [profile, setProfile] = useState<UserProfile>({
-    goal: 'Gran Fondo',
-    level: 'Intermediate',
+    goal: '' as TrainingGoal,
+    level: '' as FitnessLevel,
     weeklyHours: 6,
     availableDays: ['Di', 'Do', 'Sa', 'So'],
     equipment: ['Road Bike'],
@@ -46,7 +46,6 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
   };
 
   const handleFinalSubmit = () => {
-    // Sanitize profile based on metricsKnowledge before submitting
     const finalProfile = { ...profile };
     
     if (metricsKnowledge === 'none') {
@@ -57,7 +56,6 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
     } else if (metricsKnowledge === 'hr') {
       delete finalProfile.ftp;
     }
-    // if 'both', we keep both as they were validated in step 4
 
     onSubmit(finalProfile);
   };
@@ -80,7 +78,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
     }));
   };
 
-  const primaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center";
+  const primaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-emerald-400";
   const secondaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center";
   
   const questionClass = "text-slate-200 text-xl md:text-2xl font-semibold italic leading-tight mb-4";
@@ -109,7 +107,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
               ))}
             </div>
             <div className="flex justify-center pt-6">
-              <button onClick={nextStep} className={primaryBtnClass}>Weiter</button>
+              <button onClick={nextStep} className={primaryBtnClass} disabled={!profile.goal}>Weiter</button>
             </div>
           </div>
         );
@@ -129,7 +127,6 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-lg">{opt.label}</span>
-                    {profile.level === opt.value && <i className="fas fa-check-circle text-emerald-400"></i>}
                   </div>
                   <div className="text-slate-400 text-sm leading-snug">{opt.description}</div>
                 </button>
@@ -139,7 +136,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
-              <button onClick={nextStep} className={primaryBtnClass}>
+              <button onClick={nextStep} className={primaryBtnClass} disabled={!profile.level}>
                 Weiter <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>

@@ -12,9 +12,5 @@ export default defineConfig({
         main: './index.html'
       }
     }
-  },
-  define: {
-    // Vite nutzt import.meta.env, aber das hier hilft alten Libs
-    'process.env': {} 
   }
 })
