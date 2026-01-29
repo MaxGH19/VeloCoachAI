@@ -6,10 +6,11 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ onStart }) => {
   return (
-    <div className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-32">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full opacity-20 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] md:w-[40%] h-[40%] bg-emerald-500 rounded-full blur-[80px] md:blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] md:w-[40%] h-[40%] bg-blue-600 rounded-full blur-[80px] md:blur-[120px]"></div>
+    <div className="relative overflow-hidden pt-12 pb-16 md:pt-24 md:pb-24">
+      {/* Hintergrund-Blobs für besseren Flow */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-emerald-500/30 rounded-full blur-[100px] md:blur-[150px] animate-pulse"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[80%] bg-blue-600/20 rounded-full blur-[100px] md:blur-[150px]"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 relative z-10 text-center">
@@ -26,7 +27,7 @@ const Hero: React.FC<HeroProps> = ({ onStart }) => {
           >
             Trainingsplan erstellen
           </button>
-          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-center">
+          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-center text-slate-300 font-semibold">
             Mehr erfahren
           </button>
         </div>
