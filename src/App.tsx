@@ -40,10 +40,8 @@ const App: React.FC = () => {
     setState(AppState.LANDING);
   };
 
-  const isLanding = state === AppState.LANDING;
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
       <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={handleReset}>
@@ -58,7 +56,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className={`pt-16 ${isLanding ? '' : 'flex-grow'}`}>
+      <main className="flex-grow pt-16 flex flex-col">
         {error && (
           <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-bounce">
             <i className="fas fa-exclamation-circle text-xl"></i>
@@ -66,24 +64,22 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {state === AppState.LANDING && <Hero onStart={handleStart} />}
-        
-        {state === AppState.QUESTIONNAIRE && (
-          <div className="flex-grow">
+        <div className="flex-grow flex flex-col justify-center">
+          {state === AppState.LANDING && <Hero onStart={handleStart} />}
+          
+          {state === AppState.QUESTIONNAIRE && (
             <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />
-          </div>
-        )}
-        
-        {state === AppState.LOADING && <Loader />}
-        
-        {state === AppState.DISPLAY && plan && (
-          <div className="flex-grow">
+          )}
+          
+          {state === AppState.LOADING && <Loader />}
+          
+          {state === AppState.DISPLAY && plan && (
             <TrainingPlanDisplay plan={plan} onReset={handleReset} />
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
-      <footer className="py-12 border-t border-white/5 bg-slate-900/50 relative z-10">
+      <footer className="py-10 border-t border-white/5 bg-slate-900/50 relative z-10 shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
