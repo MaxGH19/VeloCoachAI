@@ -48,7 +48,7 @@ const App: React.FC = () => {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
               <i className="fas fa-bolt text-slate-950 text-sm"></i>
             </div>
-            <span className="font-extrabold text-xl tracking-tighter uppercase">VELOCOACH <span className="text-emerald-500">AI</span></span>
+            <span className="font-extrabold text-xl tracking-tighter uppercase text-white">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
           <button className="px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold hover:bg-emerald-400 transition-all">
             Login
@@ -56,25 +56,29 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="flex-grow pt-16 flex flex-col">
+      <main className="flex-grow pt-16 flex flex-col overflow-hidden">
         {error && (
-          <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-bounce">
+          <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-bounce z-50">
             <i className="fas fa-exclamation-circle text-xl"></i>
             <p className="text-sm font-bold">{error}</p>
           </div>
         )}
 
-        <div className="flex-grow flex flex-col justify-center">
+        <div className="flex-grow flex flex-col justify-center relative">
           {state === AppState.LANDING && <Hero onStart={handleStart} />}
           
           {state === AppState.QUESTIONNAIRE && (
-            <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />
+            <div className="w-full">
+              <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />
+            </div>
           )}
           
           {state === AppState.LOADING && <Loader />}
           
           {state === AppState.DISPLAY && plan && (
-            <TrainingPlanDisplay plan={plan} onReset={handleReset} />
+            <div className="w-full">
+              <TrainingPlanDisplay plan={plan} onReset={handleReset} />
+            </div>
           )}
         </div>
       </main>
@@ -86,15 +90,15 @@ const App: React.FC = () => {
               <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
                 <i className="fas fa-bolt text-emerald-500 text-[10px]"></i>
               </div>
-              <span className="font-bold text-slate-300 text-sm tracking-wider">VELOCOACH AI</span>
+              <span className="font-bold text-white text-sm tracking-wider uppercase">VELOCOACH.<span className="text-emerald-500">AI</span></span>
             </div>
-            <div className="flex gap-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
+            <div className="flex gap-8 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
               <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
               <a href="#" className="hover:text-emerald-400 transition-colors">AGB</a>
               <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
             </div>
             <div className="text-slate-600 text-[10px] font-mono">
-              VER. 1.0.4-STABLE
+              VER. 1.0.5-STABLE
             </div>
           </div>
         </div>

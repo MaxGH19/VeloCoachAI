@@ -1,4 +1,4 @@
-export type TrainingGoal = 'Endurance' | 'Climbing' | 'Sprinting' | 'Weight Loss' | 'Event Prep';
+export type TrainingGoal = 'Gran Fondo' | 'Kriterium' | 'Fitness' | 'All-round';
 export type FitnessLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type Equipment = 'Road Bike' | 'Indoor Trainer' | 'Power Meter' | 'Heart Rate Monitor';
 
@@ -10,6 +10,8 @@ export interface UserProfile {
   equipment: Equipment[];
   age: number;
   weight: number;
+  ftp?: number;
+  maxHeartRate?: number;
 }
 
 export interface TrainingSession {

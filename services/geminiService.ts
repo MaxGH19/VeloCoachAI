@@ -4,20 +4,35 @@ import { UserProfile, FullTrainingPlan } from "../types.ts";
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
+  const systemInstruction = `
+    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 
+    Deine Aufgabe ist es, hochgradig personalisierte 4-Wochen-Trainingspläne im JSON-Format zu erstellen.
+
+    Befolge strikt diese wissenschaftlichen Prinzipien:
+    1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung/Regeneration um -40% TSS gegenüber Woche 3).
+    2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
+    3. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten. Intervalle präzise beschreiben (z.B. "4x8 Min in Z4 mit 4 Min Pause in Z1").
+    4. ZIELSPEZIFISCHER FOKUS:
+       - Gran Fondo: Fokus auf Ausdauer, Fettstoffwechsel, Kraftausdauer (Z2 & Z3).
+       - Kriterium: Fokus auf Sprints, anaerobe Kapazität, Tempowechsel (Z5 & Sprints).
+       - Fitness: Fokus auf Kalorienverbrauch durch Volumen, moderat (Z1 & Z2).
+       - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
+    5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
+    6. SPRACHE: Deutsch.
+  `;
+
   const prompt = `
-    Erstelle einen professionellen, hochintensiven 4-Wochen-Radtrainingsplan für einen Amateursportler:
+    Erstelle einen 4-Wochen-Radtrainingsplan für diesen Athleten:
     - Ziel: ${profile.goal}
     - Aktuelles Level: ${profile.level}
-    - Verfügbarkeit: ${profile.weeklyHours} Stunden pro Woche
+    - Verfügbarkeit: ${profile.weeklyHours} Stunden/Woche
     - Trainingstage: ${profile.availableDays.join(', ')}
     - Ausrüstung: ${profile.equipment.join(', ')}
     - Profil: ${profile.age} Jahre, ${profile.weight}kg
+    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
+    ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
 
-    Anforderungen:
-    1. Sprache: DEUTSCH.
-    2. Periodisierung: Woche 1-3 progressiv steigend, Woche 4 als Entlastungswoche (Regeneration).
-    3. Details: Jede Einheit braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest) und eine genaue Beschreibung der Intervalle.
-    4. Metriken: Berechne den geschätzten TSS (Training Stress Score) für den gesamten Plan.
+    Antworte im validen JSON-Format.
   `;
 
   try {
@@ -25,6 +40,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
       model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
+        systemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -55,7 +71,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
                         type: { type: Type.STRING },
                         title: { type: Type.STRING },
                         durationMinutes: { type: Type.NUMBER },
-                        intensity: { type: Type.STRING },
+                        intensity: { type: Type.STRING, enum: ["Low", "Moderate", "High", "Rest"] },
                         description: { type: Type.STRING },
                         intervals: { type: Type.STRING },
                       },
@@ -73,11 +89,11 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     });
 
     const text = response.text;
-    if (!text) throw new Error("Keine Daten von der KI empfangen.");
+    if (!text) throw new Error("Keine Antwort vom Trainer erhalten.");
     
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
-    console.error("Gemini Generation Error:", err);
-    throw new Error(`KI-Generierung fehlgeschlagen: ${err.message}`);
+    console.error("Gemini Trainer Error:", err);
+    throw new Error(`Trainingsplan-Erstellung fehlgeschlagen: ${err.message}`);
   }
 }

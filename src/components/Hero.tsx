@@ -26,15 +26,14 @@ const Hero: React.FC<HeroProps> = ({ onStart }) => {
           Train Smarter. <br className="hidden sm:block" />Ride Faster.
         </h1>
         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed px-2">
-          VeloCoach ist deine KI-gestützte Trainingsplattform. Erhalte einen professionellen Trainingsplan, der perfekt zu deinen Ambitionen und deinem Alltag passt.
+          VeloCoach.AI ist deine KI-gestützte Trainingsplattform. Erhalte einen professionellen Trainingsplan, der perfekt zu deinen Ambitionen und deinem Alltag passt.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4">
           <button 
             onClick={onStart}
-            className="w-full sm:w-auto px-10 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-10 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 flex items-center justify-center"
           >
             Trainingsplan erstellen
-            <i className="fas fa-arrow-right text-xs"></i>
           </button>
           <button className="w-full sm:w-auto px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-center text-slate-300 font-semibold">
             Mehr erfahren

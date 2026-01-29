@@ -1,11 +1,10 @@
 import { TrainingGoal, FitnessLevel, Equipment } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [
-  { value: 'Endurance', label: 'Ausdauer / Century', icon: 'fa-route' },
-  { value: 'Climbing', label: 'Bergspezialist', icon: 'fa-mountain' },
-  { value: 'Sprinting', label: 'Kraft & Speed', icon: 'fa-bolt' },
-  { value: 'Weight Loss', label: 'Fitness & Abnehmen', icon: 'fa-weight-scale' },
-  { value: 'Event Prep', label: 'Wettkampfvorbereitung', icon: 'fa-calendar-check' },
+  { value: 'Gran Fondo', label: 'Gran Fondo / Langstrecke', icon: 'fa-route' },
+  { value: 'Kriterium', label: 'Kriterium & Kurzdistanz', icon: 'fa-gauge-high' },
+  { value: 'Fitness', label: 'Fitness & Gewichtsmanagement', icon: 'fa-heart-pulse' },
+  { value: 'All-round', label: 'All-round / FTP-Boost', icon: 'fa-rocket' },
 ];
 
 export const LEVEL_OPTIONS: { value: FitnessLevel; label: string; description: string }[] = [
