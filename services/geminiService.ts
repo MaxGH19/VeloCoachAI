@@ -3,14 +3,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // Wir nutzen gemini-3-flash-preview für schnellen Text-Output ohne Billing-Einschränkungen
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  // Verhindert den SDK-Crash "An API Key must be set when running in a browser"
+  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+    throw new Error("MISSING_API_KEY");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemInstruction = `
     Du bist ein erfahrener Radsport-Cheftrainer. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
     Wissenschaftliche Prinzipien:
     1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung ca. 60% Volumen).
-    2. INTENSITÄT: Nutze Zonen Z1-Z5 basierend auf FTP oder MaxHR (falls angegeben).
+    2. INTENSITÄT: Nutze Zonen Z1-Z5 basierend auf FTP oder MaxHR.
     3. STRUKTUR: Jede Session braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
     Antworte NUR mit validem JSON. Sprache: Deutsch.
   `;
@@ -85,9 +91,6 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     return JSON.parse(result);
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    if (error.message?.includes("API_KEY")) {
-      throw new Error("Der API-Key ist in dieser Umgebung noch nicht bereit. Bitte warte einen Moment oder lade die Seite neu.");
-    }
     throw error;
   }
 }
