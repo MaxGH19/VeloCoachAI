@@ -28,17 +28,17 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
         <div className="flex-grow">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase leading-none italic italic">
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase leading-none italic">
             {plan.planTitle}
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">{plan.summary}</p>
         </div>
         <button 
           onClick={onReset}
-          className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-emerald-500 hover:text-slate-950 transition-all font-bold uppercase text-xs tracking-widest"
+          className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-emerald-500 hover:text-slate-950 transition-all font-bold uppercase text-xs tracking-widest shrink-0"
         >
           Neustart
         </button>
@@ -51,7 +51,7 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
         <StatCard label="Status" value="Aktiv" icon="fa-check-circle" color="text-purple-500" />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
         {plan.weeks.map((w, idx) => (
           <button
             key={idx}
@@ -59,7 +59,7 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
             className={`flex-shrink-0 px-8 py-4 rounded-2xl transition-all border-2 text-left min-w-[160px] ${activeWeek === idx ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-slate-900 border-white/5 text-slate-400 hover:border-white/20'}`}
           >
             <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${activeWeek === idx ? 'text-slate-900/60' : 'text-slate-500'}`}>Woche {w.weekNumber}</div>
-            <div className="font-bold text-sm uppercase">{w.focus}</div>
+            <div className="font-bold text-sm uppercase truncate">{w.focus}</div>
           </button>
         ))}
       </div>
@@ -85,7 +85,11 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
-                  <Bar dataKey="durationMinutes" radius={[4, 4, 0, 0]}>
+                  <Tooltip 
+                    cursor={{fill: 'rgba(255,255,255,0.03)'}}
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                  />
+                  <Bar dataKey="duration" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getIntensityColor(entry.intensity)} />
                     ))}
@@ -108,7 +112,7 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
   );
 };
 
-const StatCard = ({ label, value, icon, color }: any) => (
+const StatCard: React.FC<{ label: string; value: string; icon: string; color: string }> = ({ label, value, icon, color }) => (
   <div className="bg-slate-900 border border-white/5 rounded-2xl p-6">
     <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 ${color}`}>
       <i className={`fas ${icon} text-lg`}></i>
@@ -118,9 +122,8 @@ const StatCard = ({ label, value, icon, color }: any) => (
   </div>
 );
 
-// Fix: Using React.FC to properly support key prop and other React-specific props during mapping.
 const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
-  const isRest = session.intensity === 'Rest';
+  const isRest = session.intensity === 'Rest' || session.type.toLowerCase().includes('ruhe');
   return (
     <div className={`group glass rounded-2xl p-6 border transition-all ${isRest ? 'opacity-40 grayscale' : 'border-white/5 hover:border-emerald-500/50'}`}>
       <div className="flex gap-6">
@@ -129,11 +132,11 @@ const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
           <span className="text-2xl font-black leading-none">{session.durationMinutes}</span>
           <span className="text-[8px] font-bold text-slate-500">MIN</span>
         </div>
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h4 className="font-black text-lg uppercase tracking-tight">{session.title}</h4>
+            <h4 className="font-black text-lg uppercase tracking-tight truncate">{session.title}</h4>
             {!isRest && (
-              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${
+              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border shrink-0 ${
                 session.intensity === 'High' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
                 session.intensity === 'Moderate' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
                 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'

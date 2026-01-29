@@ -13,16 +13,17 @@ type MetricsKnowledge = 'both' | 'ftp' | 'hr' | 'none';
 const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => {
   const [step, setStep] = useState(1);
   const [metricsKnowledge, setMetricsKnowledge] = useState<MetricsKnowledge>('both');
-  const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean }>({});
+  const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean; details?: boolean }>({});
+  
   const [profile, setProfile] = useState<UserProfile>({
     goal: '' as TrainingGoal,
     level: '' as FitnessLevel,
     weeklyHours: 6,
     availableDays: ['Di', 'Do', 'Sa', 'So'],
-    equipment: ['Road Bike'],
-    gender: 'männlich',
-    age: 35,
-    weight: 75,
+    equipment: [],
+    gender: '', 
+    age: undefined,
+    weight: undefined,
     ftp: undefined,
     maxHeartRate: undefined,
   });
@@ -47,11 +48,17 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     }
   };
 
+  const handleStep5Next = () => {
+    if (profile.age && profile.weight && profile.gender) {
+      setErrors({});
+      nextStep();
+    }
+  };
+
   const handleFinalSubmit = () => {
     const finalProfile = { ...profile };
     
-    // Hintergrundfunktion: Falls Max-Puls unbekannt, berechne 220 - Alter
-    if (metricsKnowledge === 'none' || metricsKnowledge === 'ftp') {
+    if ((metricsKnowledge === 'none' || metricsKnowledge === 'ftp') && profile.age) {
       finalProfile.maxHeartRate = 220 - profile.age;
     }
 
@@ -61,7 +68,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
       delete finalProfile.ftp;
     }
 
-    onSubmit(finalProfile);
+    onSubmit(finalProfile as UserProfile);
   };
 
   const toggleDay = (day: string) => {
@@ -82,8 +89,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     }));
   };
 
-  const primaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-emerald-400";
-  const secondaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center";
+  const primaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-emerald-400";
+  const secondaryBtnClass = "px-8 py-3 bg-white/5 text-slate-300 font-bold rounded-xl hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center border border-white/10";
   
   const questionClass = "text-slate-200 text-xl md:text-2xl font-semibold italic leading-tight mb-4";
 
@@ -224,37 +231,34 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                   <div className="relative">
                     <input 
                       type="number" 
-                      placeholder="z.B. 250"
                       value={profile.ftp ?? ''}
                       onChange={(e) => {
                         setProfile({...profile, ftp: e.target.value ? parseInt(e.target.value) : undefined});
                         if (e.target.value) setErrors(prev => ({ ...prev, ftp: false }));
                       }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors pr-16 ${errors.ftp ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
+                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${errors.ftp ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">Watt</span>
                   </div>
-                  {errors.ftp && <p className="text-red-500 text-xs font-bold italic">Bitte das Feld ausfüllen oder oben eine andere Option wählen</p>}
+                  {errors.ftp && <p className="text-red-500 text-xs font-bold italic">Pflichtfeld für diese Option</p>}
                 </div>
               )}
               
               {(metricsKnowledge === 'both' || metricsKnowledge === 'hr') && (
                 <div className="space-y-2">
-                  <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Maximalpuls</label>
+                  <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Maximalpuls (bpm)</label>
                   <div className="relative">
                     <input 
                       type="number" 
-                      placeholder="z.B. 185"
                       value={profile.maxHeartRate ?? ''}
                       onChange={(e) => {
                         setProfile({...profile, maxHeartRate: e.target.value ? parseInt(e.target.value) : undefined});
                         if (e.target.value) setErrors(prev => ({ ...prev, hr: false }));
                       }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors pr-16 ${errors.hr ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
+                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${errors.hr ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">bpm</span>
                   </div>
-                  {errors.hr && <p className="text-red-500 text-xs font-bold italic">Bitte das Feld ausfüllen oder oben eine andere Option wählen</p>}
+                  {errors.hr && <p className="text-red-500 text-xs font-bold italic">Pflichtfeld für diese Option</p>}
                 </div>
               )}
             </div>
@@ -270,34 +274,35 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
           </div>
         );
       case 5:
+        const isStep5Complete = profile.age !== undefined && profile.weight !== undefined && profile.gender !== '';
         return (
           <div className="space-y-8">
             <div className="space-y-2">
               <h2 className="text-2xl md:text-3xl font-bold leading-tight">Details zu dir</h2>
               <p className={questionClass}>Ein paar physiologische Daten für die Feinabstimmung.</p>
             </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Alter</label>
                 <input 
                   type="number" 
-                  pattern="\d*"
-                  value={profile.age}
-                  onChange={(e) => setProfile({...profile, age: parseInt(e.target.value) || 0})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-lg font-bold focus:outline-none focus:border-emerald-500 transition-colors"
+                  value={profile.age ?? ''}
+                  onChange={(e) => setProfile({...profile, age: e.target.value ? parseInt(e.target.value) : undefined})}
+                  className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Gewicht (kg)</label>
                 <input 
                   type="number" 
-                  pattern="\d*"
-                  value={profile.weight}
-                  onChange={(e) => setProfile({...profile, weight: parseInt(e.target.value) || 0})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-lg font-bold focus:outline-none focus:border-emerald-500 transition-colors"
+                  value={profile.weight ?? ''}
+                  onChange={(e) => setProfile({...profile, weight: e.target.value ? parseInt(e.target.value) : undefined})}
+                  className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors"
                 />
               </div>
             </div>
+
             <div className="space-y-4">
               <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Geschlecht</label>
               <div className="grid grid-cols-1 gap-2">
@@ -305,21 +310,22 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                   <button
                     key={opt.value}
                     onClick={() => setProfile({...profile, gender: opt.value})}
-                    className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.gender === opt.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}
+                    className={`p-4 rounded-xl text-left border-2 transition-all font-bold ${profile.gender === opt.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}
                   >
-                    <span className="font-medium">{opt.label}</span>
+                    {opt.label}
                   </button>
                 ))}
               </div>
             </div>
+
             <div className="flex justify-between items-center gap-4 pt-6">
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
               <button 
-                onClick={nextStep} 
+                onClick={handleStep5Next} 
                 className={primaryBtnClass}
-                disabled={!profile.gender}
+                disabled={!isStep5Complete}
               >
                 Weiter <i className="fas fa-arrow-right ml-2"></i>
               </button>
@@ -339,10 +345,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                   <button
                     key={opt.value}
                     onClick={() => toggleEquipment(opt.value)}
-                    className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.equipment.includes(opt.value) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400'}`}
+                    className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.equipment.includes(opt.value) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}
                   >
-                    <span className="font-medium">{opt.label}</span>
-                    <i className={`fas ${profile.equipment.includes(opt.value) ? 'fa-check-circle' : 'fa-circle text-slate-800'}`}></i>
+                    <span className="font-bold">{opt.label}</span>
+                    <i className={`fas ${profile.equipment.includes(opt.value) ? 'fa-check-circle text-emerald-500' : 'fa-circle text-slate-800'}`}></i>
                   </button>
                 ))}
               </div>
@@ -351,10 +357,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
-              <button 
-                onClick={handleFinalSubmit} 
-                className={primaryBtnClass}
-              >
+              <button onClick={handleFinalSubmit} className={primaryBtnClass}>
                 Plan erstellen
               </button>
             </div>
@@ -368,9 +371,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
   return (
     <div className="max-w-xl mx-auto py-6 md:py-12 px-4">
       <div className="mb-6">
-        <button onClick={onCancel} className="text-slate-500 hover:text-white mb-4 flex items-center gap-2 text-sm font-bold">
-          <i className="fas fa-chevron-left"></i> ABBRECHEN
-        </button>
         <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
           <div 
             className="bg-emerald-500 h-full transition-all duration-500 ease-out" 
@@ -379,7 +379,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
         </div>
       </div>
       
-      <div className="glass rounded-3xl p-6 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="glass rounded-3xl p-6 md:p-10 animate-fade-in">
         {renderStep()}
       </div>
     </div>

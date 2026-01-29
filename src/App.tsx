@@ -4,6 +4,7 @@ import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
 import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
 import Loader from './components/Loader.tsx';
+import LegalView from './components/LegalView.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 
@@ -11,7 +12,9 @@ enum AppState {
   LANDING,
   QUESTIONNAIRE,
   LOADING,
-  DISPLAY
+  DISPLAY,
+  PRIVACY,
+  IMPRINT
 }
 
 const App: React.FC = () => {
@@ -39,6 +42,7 @@ const App: React.FC = () => {
   const handleReset = () => {
     setPlan(null);
     setState(AppState.LANDING);
+    setError(null);
   };
 
   return (
@@ -81,6 +85,9 @@ const App: React.FC = () => {
               <TrainingPlanDisplay plan={plan} onReset={handleReset} />
             </div>
           )}
+
+          {state === AppState.PRIVACY && <LegalView type="privacy" onClose={() => setState(AppState.LANDING)} />}
+          {state === AppState.IMPRINT && <LegalView type="imprint" onClose={() => setState(AppState.LANDING)} />}
         </div>
       </main>
 
@@ -89,12 +96,14 @@ const App: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-8 text-center md:text-left">
             {/* Logo Section */}
             <div className="flex items-center justify-center md:justify-start gap-2">
-              <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
-                <i className="fas fa-bolt text-emerald-500 text-[10px]"></i>
+              <div onClick={handleReset} className="cursor-pointer flex items-center gap-2">
+                <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
+                  <i className="fas fa-bolt text-emerald-500 text-[10px]"></i>
+                </div>
+                <span className="font-bold text-white text-sm tracking-wider uppercase">
+                  VELOCOACH.<span className="text-emerald-500">AI</span>
+                </span>
               </div>
-              <span className="font-bold text-white text-sm tracking-wider uppercase">
-                VELOCOACH.<span className="text-emerald-500">AI</span>
-              </span>
             </div>
 
             {/* Center Section */}
@@ -107,8 +116,8 @@ const App: React.FC = () => {
             {/* Links and Info Section */}
             <div className="flex flex-col md:items-end gap-3">
               <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
-                <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+                <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
+                <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
               <div className="text-slate-600 text-[10px] font-mono">
                 VER. 1.0.5-STABLE

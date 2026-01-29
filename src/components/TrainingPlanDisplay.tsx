@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { FullTrainingPlan, WeeklyPlan, TrainingSession } from '../types.ts';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { FullTrainingPlan, TrainingSession } from '../types.ts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface PlanDisplayProps {
   plan: FullTrainingPlan;
@@ -22,62 +23,65 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
       case 'High': return '#ef4444';
       case 'Moderate': return '#f59e0b';
       case 'Low': return '#10b981';
-      default: return '#64748b';
+      default: return '#334155';
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight">{plan.planTitle}</h1>
-          <p className="text-slate-400 text-sm md:text-base max-w-2xl leading-relaxed">{plan.summary}</p>
+    <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
+        <div className="flex-grow">
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase leading-none italic">
+            {plan.planTitle}
+          </h1>
+          <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">{plan.summary}</p>
         </div>
         <button 
           onClick={onReset}
-          className="w-full md:w-auto px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs font-bold uppercase tracking-wider"
+          className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-emerald-500 hover:text-slate-950 transition-all font-bold uppercase text-xs tracking-widest shrink-0"
         >
-          Neuer Plan
+          Neustart
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         <StatCard label="TSS" value={plan.targetMetrics.estimatedTSS.toString()} icon="fa-bolt" color="text-yellow-500" />
-        <StatCard label="Umfang" value={plan.targetMetrics.weeklyVolume} icon="fa-clock" color="text-blue-500" />
-        <StatCard label="Dauer" value={`${plan.weeks.length} Wo.`} icon="fa-calendar" color="text-emerald-500" />
-        <StatCard label="Art" value="Periodisiert" icon="fa-layer-group" color="text-purple-500" />
+        <StatCard label="Volumen" value={plan.targetMetrics.weeklyVolume} icon="fa-clock" color="text-blue-500" />
+        <StatCard label="Dauer" value={`${plan.weeks.length} Wochen`} icon="fa-calendar" color="text-emerald-500" />
+        <StatCard label="Status" value="Aktiv" icon="fa-check-circle" color="text-purple-500" />
       </div>
 
-      <div className="mb-6 sticky top-16 z-30 bg-slate-950/95 backdrop-blur-sm -mx-4 px-4 py-2 border-b border-white/5">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {plan.weeks.map((w, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveWeek(idx)}
-              className={`flex-shrink-0 px-5 py-3 rounded-xl transition-all border-2 text-left min-w-[120px] ${activeWeek === idx ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10'}`}
-            >
-              <div className={`text-[10px] font-bold uppercase tracking-widest ${activeWeek === idx ? 'text-slate-800' : 'text-slate-500'}`}>Woche {w.weekNumber}</div>
-              <div className="font-bold text-sm truncate">{w.focus}</div>
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+        {plan.weeks.map((w, idx) => (
+          <button
+            key={idx}
+            onClick={() => setActiveWeek(idx)}
+            className={`flex-shrink-0 px-8 py-4 rounded-2xl transition-all border-2 text-left min-w-[160px] ${activeWeek === idx ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-slate-900 border-white/5 text-slate-400 hover:border-white/20'}`}
+          >
+            <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${activeWeek === idx ? 'text-slate-900/60' : 'text-slate-500'}`}>Woche {w.weekNumber}</div>
+            <div className="font-bold text-sm uppercase truncate">{w.focus}</div>
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-3">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <i className="fas fa-calendar-day text-emerald-500"></i>
-            Tagesplan
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px flex-grow bg-white/5"></div>
+            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Tages-Sessions</h3>
+            <div className="h-px flex-grow bg-white/5"></div>
+          </div>
           {currentWeek.sessions.map((session, idx) => (
             <SessionCard key={idx} session={session} />
           ))}
         </div>
 
-        <div className="space-y-6">
-          <div className="glass rounded-3xl p-6">
-            <h3 className="text-lg font-bold mb-6">Intensitätsprofil</h3>
-            <div className="h-56">
+        <div className="space-y-8">
+          <div className="glass rounded-[2rem] p-8 border border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2">
+              <i className="fas fa-chart-simple text-emerald-500"></i> Intensität
+            </h3>
+            <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
@@ -93,17 +97,12 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 flex flex-wrap gap-3 text-[10px] font-bold uppercase text-slate-500">
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Erholung</div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div> Aerob</div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> Schwelle</div>
-            </div>
           </div>
 
-          <div className="glass rounded-3xl p-6 border-l-4 border-emerald-500">
+          <div className="glass rounded-[2rem] p-6 border-l-4 border-emerald-500">
             <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-500 mb-2">Trainer-Tipp</h3>
             <p className="text-sm text-slate-300 leading-relaxed italic">
-              "Bleib konsistent. Die Phase {currentWeek.focus} dient der Grundlagenanpassung. Wenn es stressig wird, priorisiere die Einheiten mit hoher Intensität."
+              "Bleib konsistent. Die Phase {currentWeek.focus} dient der Grundlagenanpassung. Qualität über Quantität."
             </p>
           </div>
         </div>
@@ -113,49 +112,43 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onReset }) => {
 };
 
 const StatCard: React.FC<{ label: string; value: string; icon: string; color: string }> = ({ label, value, icon, color }) => (
-  <div className="glass rounded-2xl p-4 md:p-6">
-    <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mb-3 ${color}`}>
-      <i className={`fas ${icon} text-sm`}></i>
+  <div className="bg-slate-900 border border-white/5 rounded-2xl p-6">
+    <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 ${color}`}>
+      <i className={`fas ${icon} text-lg`}></i>
     </div>
-    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">{label}</div>
-    <div className="text-xl md:text-2xl font-black">{value}</div>
+    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{label}</div>
+    <div className="text-2xl font-black tracking-tight">{value}</div>
   </div>
 );
 
 const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
-  const getIntensityBadge = (intensity: string) => {
-    switch (intensity) {
-      case 'High': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      case 'Moderate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'Low': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
-  };
-
-  const isRest = (session.intensity as string) === 'Rest' || (session.intensity as string) === 'Ruhetag' || session.type.toLowerCase().includes('rest') || session.type.toLowerCase().includes('ruhe');
-
+  const isRest = session.intensity === 'Rest' || session.type.toLowerCase().includes('ruhe');
   return (
-    <div className={`glass rounded-2xl p-5 border transition-all ${isRest ? 'opacity-70 border-white/5' : 'border-white/5 hover:border-emerald-500/30'}`}>
-      <div className="flex gap-4">
-        <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/5 border border-white/10">
-          <span className="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">{session.day}</span>
-          <span className="text-xl font-black leading-none">{session.durationMinutes}</span>
-          <span className="text-[8px] font-bold text-slate-500 mt-0.5">MIN</span>
+    <div className={`group glass rounded-2xl p-6 border transition-all ${isRest ? 'opacity-40 grayscale' : 'border-white/5 hover:border-emerald-500/50'}`}>
+      <div className="flex gap-6">
+        <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-slate-950 border border-white/5 group-hover:border-emerald-500/20 transition-colors">
+          <span className="text-[10px] font-black text-slate-500 uppercase mb-1">{session.day}</span>
+          <span className="text-2xl font-black leading-none">{session.durationMinutes}</span>
+          <span className="text-[8px] font-bold text-slate-500">MIN</span>
         </div>
         <div className="flex-grow min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <h4 className="font-bold text-base truncate pr-2">{session.title}</h4>
+          <div className="flex items-center gap-3 mb-2">
+            <h4 className="font-black text-lg uppercase tracking-tight truncate">{session.title}</h4>
             {!isRest && (
-              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase border shrink-0 ${getIntensityBadge(session.intensity)}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border shrink-0 ${
+                session.intensity === 'High' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                session.intensity === 'Moderate' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
                 {session.intensity}
               </span>
             )}
           </div>
-          <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 md:line-clamp-none mb-2">{session.description}</p>
+          <p className="text-slate-400 text-sm leading-relaxed mb-4">{session.description}</p>
           {session.intervals && (
-            <div className="mt-2 py-2 px-3 bg-emerald-500/5 rounded-lg border border-emerald-500/10 flex items-start gap-2">
-              <i className="fas fa-bolt text-[10px] text-emerald-400 mt-1"></i>
-              <span className="text-[11px] text-slate-300 font-medium leading-snug">{session.intervals}</span>
+            <div className="flex items-start gap-2 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10">
+              <i className="fas fa-bolt text-[10px] text-emerald-500 mt-1"></i>
+              <span className="text-xs font-bold text-emerald-400/80 italic">{session.intervals}</span>
             </div>
           )}
         </div>

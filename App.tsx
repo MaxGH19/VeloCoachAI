@@ -4,10 +4,11 @@ import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
 import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
 import Loader from './components/Loader.tsx';
+import LegalView from './components/LegalView.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 
-enum AppState { LANDING, QUESTIONNAIRE, LOADING, DISPLAY }
+enum AppState { LANDING, QUESTIONNAIRE, LOADING, DISPLAY, PRIVACY, IMPRINT }
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
@@ -80,6 +81,8 @@ const App: React.FC = () => {
           {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={() => setState(AppState.LANDING)} />}
           {state === AppState.LOADING && <Loader />}
           {state === AppState.DISPLAY && plan && <TrainingPlanDisplay plan={plan} onReset={handleReset} />}
+          {state === AppState.PRIVACY && <LegalView type="privacy" onClose={() => setState(AppState.LANDING)} />}
+          {state === AppState.IMPRINT && <LegalView type="imprint" onClose={() => setState(AppState.LANDING)} />}
         </div>
       </main>
 
@@ -88,9 +91,11 @@ const App: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-6">
             {/* Logo Section */}
             <div className="flex justify-center md:justify-start">
-              <span className="font-bold text-white text-[10px] tracking-widest uppercase opacity-50">
-                VELOCOACH.<span className="text-emerald-500">AI</span>
-              </span>
+              <div onClick={handleReset} className="cursor-pointer">
+                <span className="font-bold text-white text-[10px] tracking-widest uppercase opacity-50">
+                  VELOCOACH.<span className="text-emerald-500">AI</span>
+                </span>
+              </div>
             </div>
             
             {/* Center Section */}
@@ -102,8 +107,8 @@ const App: React.FC = () => {
 
             {/* Links Section */}
             <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-              <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
-              <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+              <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
+              <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               <span className="text-slate-800">LIVE-V1.2</span>
             </div>
           </div>

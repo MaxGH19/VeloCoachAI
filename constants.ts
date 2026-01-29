@@ -17,9 +17,8 @@ export const LEVEL_OPTIONS: { value: FitnessLevel; label: string; description: s
 export const DAY_OPTIONS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
 export const EQUIPMENT_OPTIONS: { value: Equipment; label: string }[] = [
-  { value: 'Road Bike', label: 'Rennrad / Gravel' },
-  { value: 'Indoor Trainer', label: 'Smart Trainer' },
-  { value: 'Power Meter', label: 'Wattmessgerät' },
+  { value: 'Smart Trainer', label: 'Smart Trainer (Rolle)' },
+  { value: 'Power Meter', label: 'Powermeter am Rad' },
   { value: 'Heart Rate Monitor', label: 'Pulsgurt' },
 ];
 
