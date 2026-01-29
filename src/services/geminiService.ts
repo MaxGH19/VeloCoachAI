@@ -2,7 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // Strikte Einhaltung der Vorgabe: Nur process.env.API_KEY ohne Fallback verwenden
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const systemInstruction = `
     Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 

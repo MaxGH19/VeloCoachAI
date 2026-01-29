@@ -102,7 +102,7 @@ const App: React.FC = () => {
               <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
             </div>
             <div className="text-slate-600 text-[10px] font-mono">
-              VER. 1.0.5-STABLE
+              VER. 1.0.6-CLEAN
             </div>
           </div>
         </div>
