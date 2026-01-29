@@ -13,29 +13,13 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showKeyButton, setShowKeyButton] = useState(false);
 
   const handleStart = () => {
     setError(null);
-    setShowKeyButton(false);
     setState(AppState.QUESTIONNAIRE);
   };
 
   const handleCancel = () => setState(AppState.LANDING);
-
-  const handleConnectKey = async () => {
-    if (typeof (window as any).aistudio !== 'undefined') {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        setError(null);
-        setShowKeyButton(false);
-        // Nach Key-Auswahl gehen wir zurück zum Questionnaire
-        setState(AppState.QUESTIONNAIRE);
-      } catch (e) {
-        console.error("Key selection failed", e);
-      }
-    }
-  };
 
   const handleSubmit = async (profile: UserProfile) => {
     setState(AppState.LOADING);
@@ -45,13 +29,8 @@ const App: React.FC = () => {
       setPlan(generatedPlan);
       setState(AppState.DISPLAY);
     } catch (err: any) {
-      console.error("Plan Error:", err);
-      if (err.message === "MISSING_API_KEY" || err.message?.includes("API Key")) {
-        setError("API Key fehlt. Bitte verknüpfe einen Google AI Studio Key für Netlify.");
-        setShowKeyButton(true);
-      } else {
-        setError(err.message || "Es gab ein Problem. Bitte versuche es erneut.");
-      }
+      console.error("Plan Generation Error:", err);
+      setError("Erstellung fehlgeschlagen. Bitte prüfe die Internetverbindung oder versuche es später erneut.");
       setState(AppState.LANDING);
     }
   };
@@ -59,8 +38,6 @@ const App: React.FC = () => {
   const handleReset = () => {
     setPlan(null);
     setState(AppState.LANDING);
-    setError(null);
-    setShowKeyButton(false);
   };
 
   return (
@@ -83,17 +60,9 @@ const App: React.FC = () => {
 
       <main className="flex-grow pt-16 flex flex-col overflow-hidden">
         {error && (
-          <div className="max-w-md mx-auto mt-6 p-6 bg-slate-900 border border-red-500/20 rounded-2xl z-50 text-center shadow-2xl animate-fade-in">
-            <i className="fas fa-exclamation-triangle text-red-500 text-2xl mb-3"></i>
-            <p className="text-sm font-bold text-slate-200 mb-4">{error}</p>
-            {showKeyButton && (
-              <button 
-                onClick={handleConnectKey}
-                className="w-full py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
-              >
-                <i className="fas fa-key"></i> Key jetzt verknüpfen
-              </button>
-            )}
+          <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-fade-in z-50">
+            <i className="fas fa-exclamation-circle text-xl"></i>
+            <p className="text-sm font-bold">{error}</p>
           </div>
         )}
 
