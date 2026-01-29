@@ -9,26 +9,13 @@ import { generateTrainingPlan } from './services/geminiService.ts';
 
 enum AppState { LANDING, QUESTIONNAIRE, LOADING, DISPLAY }
 
-// Note: Removed local declaration of aistudio to avoid duplication with environment-provided types.
-// We use (window as any).aistudio to safely access the pre-configured environment methods.
-
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStart = async () => {
-    // Vor dem Start prüfen, ob ein API-Key vorhanden ist (für Browser-Umgebungen)
-    if (typeof (window as any).aistudio !== 'undefined') {
-      try {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          await (window as any).aistudio.openSelectKey();
-        }
-      } catch (e) {
-        console.warn("API Key check failed, proceeding anyway.");
-      }
-    }
+  const handleStart = () => {
+    setError(null);
     setState(AppState.QUESTIONNAIRE);
   };
 
@@ -43,15 +30,7 @@ const App: React.FC = () => {
       setState(AppState.DISPLAY);
     } catch (err: any) {
       console.error("Plan Error:", err);
-      // Falls der Key fehlt oder ungültig ist, den Dialog erneut triggern
-      if (err.message.includes("API Key must be set") || err.message.includes("entity was not found")) {
-        setError("API Key fehlt oder ist ungültig. Bitte wähle einen Key aus.");
-        if (typeof (window as any).aistudio !== 'undefined') {
-          await (window as any).aistudio.openSelectKey();
-        }
-      } else {
-        setError(err.message || "Es gab ein Problem. Bitte versuche es erneut.");
-      }
+      setError(err.message || "Es gab ein Problem bei der Erstellung. Bitte versuche es erneut.");
       setState(AppState.LANDING);
     }
   };
@@ -73,19 +52,16 @@ const App: React.FC = () => {
               VELOCOACH.<span className="text-emerald-500">AI</span>
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-[10px] font-bold text-slate-500 tracking-widest uppercase italic">Elite Performance</span>
-            <button className="px-4 py-1.5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/5 transition-all uppercase tracking-tighter">
-              Login
-            </button>
-          </div>
+          <button className="px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold hover:bg-emerald-400 transition-all">
+            Login
+          </button>
         </div>
       </nav>
 
-      <main className="flex-grow pt-16 flex flex-col overflow-x-hidden">
+      <main className="flex-grow pt-16 flex flex-col overflow-hidden">
         {error && (
-          <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-bounce z-50">
-            <i className="fas fa-exclamation-circle text-xl"></i>
+          <div className="max-w-md mx-auto mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center gap-3 animate-bounce z-50 text-center">
+            <i className="fas fa-exclamation-circle text-xl mb-1"></i>
             <p className="text-sm font-bold">{error}</p>
           </div>
         )}
@@ -98,15 +74,27 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="py-8 border-t border-white/5 bg-slate-900/50">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">© 2025 VELOCOACH.AI • BORN IN GERMANY</div>
-          <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            <a href="#" className="hover:text-emerald-400">Datenschutz</a>
-            <a href="#" className="hover:text-emerald-400">AGB</a>
-            <a href="#" className="hover:text-emerald-400">Impressum</a>
+      <footer className="py-10 border-t border-white/5 bg-slate-900/50 relative z-10 shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
+                <i className="fas fa-bolt text-emerald-500 text-[10px]"></i>
+              </div>
+              <span className="font-bold text-white text-sm tracking-wider uppercase">VELOCOACH.<span className="text-emerald-500">AI</span></span>
+            </div>
+            <div className="flex gap-8 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+              <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
+              <a href="#" className="hover:text-emerald-400 transition-colors">AGB</a>
+              <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+            </div>
+            <div className="text-slate-600 text-[10px] font-mono">
+              VER. 1.0.5-STABLE
+            </div>
           </div>
-          <div className="text-slate-700 text-[10px] font-mono">VER. 1.0.5-STABLE</div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 mt-6 text-center">
+          <div className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">© 2025 VELOCOACH.AI • BORN IN GERMANY</div>
         </div>
       </footer>
     </div>
