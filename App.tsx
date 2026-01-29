@@ -50,11 +50,6 @@ const App: React.FC = () => {
             </div>
             <span className="font-extrabold text-xl tracking-tighter">VELOCOACH <span className="text-emerald-500">AI</span></span>
           </div>
-          <div className="hidden md:flex gap-8 text-sm font-medium text-slate-400">
-            <a href="#" className="hover:text-emerald-400 transition-colors">Methodik</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">Community</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">Pricing</a>
-          </div>
           <button className="px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold hover:bg-emerald-400 transition-all">
             Login
           </button>
@@ -94,7 +89,7 @@ const App: React.FC = () => {
             <div className="flex gap-8 text-slate-500 text-sm font-medium">
               <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
               <a href="#" className="hover:text-emerald-400 transition-colors">AGB</a>
-              <a href="#" className="hover:text-emerald-400 transition-colors">Support</a>
+              <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
             </div>
             <div className="text-slate-600 text-xs font-mono">
               VER. 1.0.4-STABLE
