@@ -5,15 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   define: {
+    // Vite injiziert den Key zur Build-Zeit oder Laufzeit aus der Umgebung
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ""),
   },
-  server: {
-    host: true,
-    port: 3000
-  },
+  base: './',
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
     rollupOptions: {
       input: {
         main: './index.html'

@@ -3,47 +3,33 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // 1. Key-Akquise: Priorität auf process.env, Fallback auf aistudio window helper
-  let apiKey = process.env.API_KEY;
-
-  if (!apiKey || apiKey === "undefined" || apiKey === "") {
-    const aistudio = (window as any).aistudio;
-    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
-      const hasKey = await aistudio.hasSelectedApiKey();
-      if (!hasKey && typeof aistudio.openSelectKey === 'function') {
-        await aistudio.openSelectKey();
-      }
-      apiKey = process.env.API_KEY; // Erneuter Versuch nach Dialog
-    }
-  }
-
-  if (!apiKey) {
-    throw new Error("API_KEY_MISSING");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Initialisierung direkt mit der Umgebungsvariable
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 
   const systemInstruction = `
-    Du bist ein weltklasse Radsport-Trainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
-    Wissenschaftliche Prinzipien: Periodisierung (Wochen 1-3 Steigerung, Woche 4 Entlastung), Zonen Z1-Z5.
+    Du bist ein weltklasse Radsport-Trainer. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
+    Wissenschaftliche Prinzipien: 
+    - Periodisierung (Wochen 1-3 Steigerung der Last um ca. 10-15%, Woche 4 Entlastung um 40%).
+    - Nutze Zonen Z1-Z5 basierend auf FTP oder MaxHR.
+    - Jede Session braucht: Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
     Sprache: Deutsch. Antworte NUR mit validem JSON.
   `;
 
   const prompt = `
     Erstelle einen 4-Wochen-Radtrainingsplan für:
     - Ziel: ${profile.goal}
-    - Fitness: ${profile.level}
+    - Level: ${profile.level}
     - Zeitbudget: ${profile.weeklyHours}h/Woche
-    - Tage: ${profile.availableDays.join(', ')}
+    - Verfügbare Tage: ${profile.availableDays.join(', ')}
     - Equipment: ${profile.equipment.join(', ')}
-    - Athlet: ${profile.age} Jahre, ${profile.weight}kg
-    ${profile.ftp ? `- FTP: ${profile.ftp}W` : ''}
-    ${profile.maxHeartRate ? `- MaxHR: ${profile.maxHeartRate}bpm` : ''}
+    - Athleten-Profil: ${profile.age} Jahre, ${profile.weight}kg
+    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
+    ${profile.maxHeartRate ? `- MaxHR: ${profile.maxHeartRate} bpm` : ''}
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
         systemInstruction,
@@ -94,12 +80,13 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
       }
     });
 
-    const result = response.text;
-    if (!result) throw new Error("EMPTY_RESPONSE");
-    return JSON.parse(result);
+    const resultText = response.text;
+    if (!resultText) throw new Error("EMPTY_AI_RESPONSE");
+    
+    return JSON.parse(resultText);
   } catch (error: any) {
-    console.error("Gemini Engine Error:", error);
-    if (error.message?.includes("API key not valid")) throw new Error("INVALID_KEY");
-    throw error;
+    console.error("Gemini AI API Error:", error);
+    // Wir werfen einen generischen Fehler für das UI
+    throw new Error("TRAINER_OFFLINE");
   }
 }
