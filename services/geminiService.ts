@@ -3,26 +3,32 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("API Key must be set when running in a browser");
+  }
+
+  // Erstellt eine neue Instanz unmittelbar vor dem Request, um den aktuellsten Key zu nutzen
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemInstruction = `
-    Du bist ein weltklasse Radsport-Coach. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
-    
-    Regeln:
-    1. PERIODISIERUNG: 3 Wochen Aufbau (ansteigender TSS), 1 Woche Erholung (ca. 60% Volumen von Woche 3).
-    2. WISSENSCHAFT: Nutze Intensitätszonen Z1-Z5. Wenn FTP (${profile.ftp || 'n/a'}) oder MaxHR (${profile.maxHeartRate || 'n/a'}) bekannt sind, nenne konkrete Zielwerte in der Beschreibung.
-    3. STRUKTUR: Jede Woche hat einen Fokus. Jede Einheit hat Tag, Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und exakte Intervalle (z.B. "3x10min Z4").
-    4. SPRACHE: Deutsch.
+    Du bist ein erfahrener Radsport-Cheftrainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
+    Wissenschaftliche Prinzipien:
+    1. Periodisierung: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung ca. 60% Volumen).
+    2. Intensität: Nutze Zonen Z1-Z5.
+    3. Struktur: Jede Session braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
+    Antworte NUR mit validem JSON. Sprache: Deutsch.
   `;
 
   const prompt = `
-    Erstelle einen Plan für:
+    Erstelle einen 4-Wochen-Radtrainingsplan für:
     - Ziel: ${profile.goal}
     - Level: ${profile.level}
-    - Stunden/Woche: ${profile.weeklyHours}
-    - Trainingstage: ${profile.availableDays.join(', ')}
+    - Zeit: ${profile.weeklyHours}h/Woche
+    - Tage: ${profile.availableDays.join(', ')}
     - Equipment: ${profile.equipment.join(', ')}
-    - Profil: ${profile.age}J, ${profile.weight}kg.
+    - Daten: ${profile.age} J., ${profile.weight}kg, FTP: ${profile.ftp || 'n/a'}, MaxHR: ${profile.maxHeartRate || 'n/a'}.
   `;
 
   try {
@@ -79,10 +85,10 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     });
 
     const result = response.text;
-    if (!result) throw new Error("KI antwortet nicht");
+    if (!result) throw new Error("Keine Antwort vom Trainer erhalten.");
     return JSON.parse(result);
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Fehler bei der Plan-Erstellung. Bitte prüfe deine Internetverbindung.");
+  } catch (error: any) {
+    console.error("Gemini Trainer Error:", error);
+    throw error;
   }
 }

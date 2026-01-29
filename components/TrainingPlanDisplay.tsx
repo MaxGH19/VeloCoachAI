@@ -118,7 +118,8 @@ const StatCard = ({ label, value, icon, color }: any) => (
   </div>
 );
 
-const SessionCard = ({ session }: { session: TrainingSession }) => {
+// Fix: Using React.FC to properly support key prop and other React-specific props during mapping.
+const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
   const isRest = session.intensity === 'Rest';
   return (
     <div className={`group glass rounded-2xl p-6 border transition-all ${isRest ? 'opacity-40 grayscale' : 'border-white/5 hover:border-emerald-500/50'}`}>

@@ -9,12 +9,29 @@ import { generateTrainingPlan } from './services/geminiService.ts';
 
 enum AppState { LANDING, QUESTIONNAIRE, LOADING, DISPLAY }
 
+// Note: Removed local declaration of aistudio to avoid duplication with environment-provided types.
+// We use (window as any).aistudio to safely access the pre-configured environment methods.
+
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStart = () => setState(AppState.QUESTIONNAIRE);
+  const handleStart = async () => {
+    // Vor dem Start prüfen, ob ein API-Key vorhanden ist (für Browser-Umgebungen)
+    if (typeof (window as any).aistudio !== 'undefined') {
+      try {
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          await (window as any).aistudio.openSelectKey();
+        }
+      } catch (e) {
+        console.warn("API Key check failed, proceeding anyway.");
+      }
+    }
+    setState(AppState.QUESTIONNAIRE);
+  };
+
   const handleCancel = () => setState(AppState.LANDING);
 
   const handleSubmit = async (profile: UserProfile) => {
@@ -25,7 +42,16 @@ const App: React.FC = () => {
       setPlan(generatedPlan);
       setState(AppState.DISPLAY);
     } catch (err: any) {
-      setError(err.message || "Unerwarteter Fehler");
+      console.error("Plan Error:", err);
+      // Falls der Key fehlt oder ungültig ist, den Dialog erneut triggern
+      if (err.message.includes("API Key must be set") || err.message.includes("entity was not found")) {
+        setError("API Key fehlt oder ist ungültig. Bitte wähle einen Key aus.");
+        if (typeof (window as any).aistudio !== 'undefined') {
+          await (window as any).aistudio.openSelectKey();
+        }
+      } else {
+        setError(err.message || "Es gab ein Problem. Bitte versuche es erneut.");
+      }
       setState(AppState.LANDING);
     }
   };
@@ -48,9 +74,9 @@ const App: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-[10px] font-bold text-slate-500 tracking-widest uppercase">Elite Performance</span>
+            <span className="hidden sm:inline text-[10px] font-bold text-slate-500 tracking-widest uppercase italic">Elite Performance</span>
             <button className="px-4 py-1.5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/5 transition-all uppercase tracking-tighter">
-              Account
+              Login
             </button>
           </div>
         </div>
@@ -76,10 +102,11 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">© 2025 VELOCOACH.AI • BORN IN GERMANY</div>
           <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            <a href="#" className="hover:text-emerald-400">Privacy</a>
-            <a href="#" className="hover:text-emerald-400">Terms</a>
-            <a href="#" className="hover:text-emerald-400">Support</a>
+            <a href="#" className="hover:text-emerald-400">Datenschutz</a>
+            <a href="#" className="hover:text-emerald-400">AGB</a>
+            <a href="#" className="hover:text-emerald-400">Impressum</a>
           </div>
+          <div className="text-slate-700 text-[10px] font-mono">VER. 1.0.5-STABLE</div>
         </div>
       </footer>
     </div>
