@@ -5,7 +5,7 @@ import { UserProfile, FullTrainingPlan } from "../types.ts";
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
   const apiKey = process.env.API_KEY;
   
-  // Verhindert den SDK-Crash "An API Key must be set when running in a browser"
+  // Wir prüfen den Key manuell, bevor wir das SDK initialisieren
   if (!apiKey || apiKey === "undefined" || apiKey === "") {
     throw new Error("MISSING_API_KEY");
   }

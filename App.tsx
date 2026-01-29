@@ -13,21 +13,27 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showKeyPrompt, setShowKeyPrompt] = useState(false);
+  const [showKeyButton, setShowKeyButton] = useState(false);
 
   const handleStart = () => {
     setError(null);
-    setShowKeyPrompt(false);
+    setShowKeyButton(false);
     setState(AppState.QUESTIONNAIRE);
   };
 
   const handleCancel = () => setState(AppState.LANDING);
 
-  const handleSelectKey = async () => {
+  const handleConnectKey = async () => {
     if (typeof (window as any).aistudio !== 'undefined') {
-      await (window as any).aistudio.openSelectKey();
-      setError(null);
-      setShowKeyPrompt(false);
+      try {
+        await (window as any).aistudio.openSelectKey();
+        setError(null);
+        setShowKeyButton(false);
+        // Nach Key-Auswahl gehen wir zurück zum Questionnaire
+        setState(AppState.QUESTIONNAIRE);
+      } catch (e) {
+        console.error("Key selection failed", e);
+      }
     }
   };
 
@@ -40,9 +46,9 @@ const App: React.FC = () => {
       setState(AppState.DISPLAY);
     } catch (err: any) {
       console.error("Plan Error:", err);
-      if (err.message === "MISSING_API_KEY") {
-        setError("API Key fehlt oder ist ungültig. Bitte wähle einen Key aus.");
-        setShowKeyPrompt(true);
+      if (err.message === "MISSING_API_KEY" || err.message?.includes("API Key")) {
+        setError("API Key fehlt. Bitte verknüpfe einen Google AI Studio Key für Netlify.");
+        setShowKeyButton(true);
       } else {
         setError(err.message || "Es gab ein Problem. Bitte versuche es erneut.");
       }
@@ -53,6 +59,8 @@ const App: React.FC = () => {
   const handleReset = () => {
     setPlan(null);
     setState(AppState.LANDING);
+    setError(null);
+    setShowKeyButton(false);
   };
 
   return (
@@ -75,15 +83,15 @@ const App: React.FC = () => {
 
       <main className="flex-grow pt-16 flex flex-col overflow-hidden">
         {error && (
-          <div className="max-w-md mx-auto mt-6 p-6 bg-slate-900 border border-red-500/20 rounded-2xl z-50 text-center shadow-2xl">
+          <div className="max-w-md mx-auto mt-6 p-6 bg-slate-900 border border-red-500/20 rounded-2xl z-50 text-center shadow-2xl animate-fade-in">
             <i className="fas fa-exclamation-triangle text-red-500 text-2xl mb-3"></i>
             <p className="text-sm font-bold text-slate-200 mb-4">{error}</p>
-            {showKeyPrompt && (
+            {showKeyButton && (
               <button 
-                onClick={handleSelectKey}
+                onClick={handleConnectKey}
                 className="w-full py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
               >
-                <i className="fas fa-key"></i> Key auswählen
+                <i className="fas fa-key"></i> Key jetzt verknüpfen
               </button>
             )}
           </div>
