@@ -1,39 +1,28 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // Strikte Nutzung von process.env.API_KEY wie vom SDK in dieser Umgebung gefordert
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const systemInstruction = `
-    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 
-    Deine Aufgabe ist es, hochgradig personalisierte 4-Wochen-Trainingspläne im JSON-Format zu erstellen.
-
-    Befolge strikt diese wissenschaftlichen Prinzipien:
-    1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung/Regeneration um -40% TSS gegenüber Woche 3).
-    2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
-    3. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten. Intervalle präzise beschreiben (z.B. "4x8 Min in Z4 mit 4 Min Pause in Z1").
-    4. ZIELSPEZIFISCHER FOKUS:
-       - Gran Fondo: Fokus auf Ausdauer, Fettstoffwechsel, Kraftausdauer (Z2 & Z3).
-       - Kriterium: Fokus auf Sprints, anaerobe Kapazität, Tempowechsel (Z5 & Sprints).
-       - Fitness: Fokus auf Kalorienverbrauch durch Volumen, moderat (Z1 & Z2).
-       - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
-    5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
-    6. SPRACHE: Deutsch.
+    Du bist ein weltklasse Radsport-Coach. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
+    
+    Regeln:
+    1. PERIODISIERUNG: 3 Wochen Aufbau (ansteigender TSS), 1 Woche Erholung (ca. 60% Volumen von Woche 3).
+    2. WISSENSCHAFT: Nutze Intensitätszonen Z1-Z5. Wenn FTP (${profile.ftp || 'n/a'}) oder MaxHR (${profile.maxHeartRate || 'n/a'}) bekannt sind, nenne konkrete Zielwerte in der Beschreibung.
+    3. STRUKTUR: Jede Woche hat einen Fokus. Jede Einheit hat Tag, Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und exakte Intervalle (z.B. "3x10min Z4").
+    4. SPRACHE: Deutsch.
   `;
 
   const prompt = `
-    Erstelle einen 4-Wochen-Radtrainingsplan für diesen Athleten:
+    Erstelle einen Plan für:
     - Ziel: ${profile.goal}
-    - Aktuelles Level: ${profile.level}
-    - Verfügbarkeit: ${profile.weeklyHours} Stunden/Woche
+    - Level: ${profile.level}
+    - Stunden/Woche: ${profile.weeklyHours}
     - Trainingstage: ${profile.availableDays.join(', ')}
-    - Ausrüstung: ${profile.equipment.join(', ')}
-    - Profil: ${profile.age} Jahre, ${profile.weight}kg
-    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
-    ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
-
-    Antworte im validen JSON-Format.
+    - Equipment: ${profile.equipment.join(', ')}
+    - Profil: ${profile.age}J, ${profile.weight}kg.
   `;
 
   try {
@@ -52,7 +41,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
               type: Type.OBJECT,
               properties: {
                 estimatedTSS: { type: Type.NUMBER },
-                weeklyVolume: { type: Type.STRING },
+                weeklyVolume: { type: Type.STRING }
               },
               required: ["estimatedTSS", "weeklyVolume"]
             },
@@ -74,7 +63,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
                         durationMinutes: { type: Type.NUMBER },
                         intensity: { type: Type.STRING, enum: ["Low", "Moderate", "High", "Rest"] },
                         description: { type: Type.STRING },
-                        intervals: { type: Type.STRING },
+                        intervals: { type: Type.STRING }
                       },
                       required: ["day", "type", "title", "durationMinutes", "intensity", "description"]
                     }
@@ -89,12 +78,11 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
       }
     });
 
-    const text = response.text;
-    if (!text) throw new Error("Keine Antwort vom Trainer erhalten.");
-    
-    return JSON.parse(text) as FullTrainingPlan;
-  } catch (err: any) {
-    console.error("Gemini Trainer Error:", err);
-    throw new Error(`Trainingsplan-Erstellung fehlgeschlagen: ${err.message}`);
+    const result = response.text;
+    if (!result) throw new Error("KI antwortet nicht");
+    return JSON.parse(result);
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    throw new Error("Fehler bei der Plan-Erstellung. Bitte prüfe deine Internetverbindung.");
   }
 }

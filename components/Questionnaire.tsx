@@ -1,15 +1,16 @@
+
 import React, { useState } from 'react';
 import { UserProfile, TrainingGoal, FitnessLevel, Equipment } from '../types.ts';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS } from '../constants.ts';
 
-interface PlanstreckeProps {
+interface QuestionnaireProps {
   onSubmit: (profile: UserProfile) => void;
   onCancel: () => void;
 }
 
 type MetricsKnowledge = 'both' | 'ftp' | 'hr' | 'none';
 
-const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
+const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => {
   const [step, setStep] = useState(1);
   const [metricsKnowledge, setMetricsKnowledge] = useState<MetricsKnowledge>('both');
   const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean }>({});

@@ -1,3 +1,4 @@
+
 import { TrainingGoal, FitnessLevel, Equipment } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [
@@ -8,9 +9,9 @@ export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[
 ];
 
 export const LEVEL_OPTIONS: { value: FitnessLevel; label: string; description: string }[] = [
-  { value: 'Beginner', label: 'Anfänger', description: '0-3 Stunden pro Woche, neu im strukturierten Training.' },
-  { value: 'Intermediate', label: 'Fortgeschritten', description: '4-8 Stunden pro Woche, vertraut mit Intervallen.' },
-  { value: 'Advanced', label: 'Profi', description: '8+ Stunden pro Woche, Erfahrung mit Leistungszonen und TSS.' },
+  { value: 'Beginner', label: 'Anfänger', description: '0-3h/Woche, neu im Training.' },
+  { value: 'Intermediate', label: 'Fortgeschritten', description: '4-8h/Woche, Intervalle bekannt.' },
+  { value: 'Advanced', label: 'Leistungssport', description: '8+ h/Woche, Zonen & TSS Profi.' },
 ];
 
 export const DAY_OPTIONS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
