@@ -3,15 +3,31 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // Erstelle Instanz direkt mit der Umgebungsvariable
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // 1. Prüfen, ob wir einen Key haben. Falls nicht, versuchen wir den AI Studio Dialog zu nutzen.
+  let apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+    const aistudio = (window as any).aistudio;
+    if (aistudio) {
+      const hasKey = await aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        // Dies öffnet den offiziellen Key-Auswahl-Dialog, falls kein Key im Environment ist
+        await aistudio.openSelectKey();
+      }
+      // Nach dem Dialog (oder falls bereits gewählt) ist der Key via process.env verfügbar
+      apiKey = process.env.API_KEY;
+    }
+  }
+
+  // 2. Erst jetzt die Instanz erstellen
+  const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
   const systemInstruction = `
     Du bist ein erfahrener Radsport-Cheftrainer. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
     Wissenschaftliche Prinzipien:
     1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung).
     2. INTENSITÄT: Nutze Zonen Z1-Z5 basierend auf FTP oder MaxHR.
-    3. EINHEITEN: Jede Session braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
+    3. STRUKTUR: Jede Session braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
     Antworte NUR mit validem JSON. Sprache: Deutsch.
   `;
 
@@ -27,59 +43,67 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      systemInstruction,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          planTitle: { type: Type.STRING },
-          summary: { type: Type.STRING },
-          targetMetrics: {
-            type: Type.OBJECT,
-            properties: {
-              estimatedTSS: { type: Type.NUMBER },
-              weeklyVolume: { type: Type.STRING }
-            },
-            required: ["estimatedTSS", "weeklyVolume"]
-          },
-          weeks: {
-            type: Type.ARRAY,
-            items: {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            planTitle: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            targetMetrics: {
               type: Type.OBJECT,
               properties: {
-                weekNumber: { type: Type.NUMBER },
-                focus: { type: Type.STRING },
-                sessions: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      day: { type: Type.STRING },
-                      type: { type: Type.STRING },
-                      title: { type: Type.STRING },
-                      durationMinutes: { type: Type.NUMBER },
-                      intensity: { type: Type.STRING, enum: ["Low", "Moderate", "High", "Rest"] },
-                      description: { type: Type.STRING },
-                      intervals: { type: Type.STRING }
-                    },
-                    required: ["day", "type", "title", "durationMinutes", "intensity", "description"]
-                  }
-                }
+                estimatedTSS: { type: Type.NUMBER },
+                weeklyVolume: { type: Type.STRING }
               },
-              required: ["weekNumber", "focus", "sessions"]
+              required: ["estimatedTSS", "weeklyVolume"]
+            },
+            weeks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  weekNumber: { type: Type.NUMBER },
+                  focus: { type: Type.STRING },
+                  sessions: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        day: { type: Type.STRING },
+                        type: { type: Type.STRING },
+                        title: { type: Type.STRING },
+                        durationMinutes: { type: Type.NUMBER },
+                        intensity: { type: Type.STRING, enum: ["Low", "Moderate", "High", "Rest"] },
+                        description: { type: Type.STRING },
+                        intervals: { type: Type.STRING }
+                      },
+                      required: ["day", "type", "title", "durationMinutes", "intensity", "description"]
+                    }
+                  }
+                },
+                required: ["weekNumber", "focus", "sessions"]
+              }
             }
-          }
-        },
-        required: ["planTitle", "summary", "weeks", "targetMetrics"]
+          },
+          required: ["planTitle", "summary", "weeks", "targetMetrics"]
+        }
       }
-    }
-  });
+    });
 
-  const result = response.text;
-  if (!result) throw new Error("Keine Antwort vom Trainer erhalten.");
-  return JSON.parse(result);
+    const result = response.text;
+    if (!result) throw new Error("Keine Antwort vom Trainer erhalten.");
+    return JSON.parse(result);
+  } catch (error: any) {
+    // Falls ein "Not found" Fehler kommt, Key-Selection resetten (laut Vorgabe)
+    if (error.message?.includes("entity was not found") && (window as any).aistudio) {
+      await (window as any).aistudio.openSelectKey();
+    }
+    throw error;
+  }
 }
