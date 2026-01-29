@@ -1,6 +1,8 @@
+
 export type TrainingGoal = 'Gran Fondo' | 'Kriterium' | 'Fitness' | 'All-round';
 export type FitnessLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type Equipment = 'Road Bike' | 'Indoor Trainer' | 'Power Meter' | 'Heart Rate Monitor';
+export type Gender = 'männlich' | 'weiblich' | 'keine Angabe';
 
 export interface UserProfile {
   goal: TrainingGoal;
@@ -8,6 +10,7 @@ export interface UserProfile {
   weeklyHours: number;
   availableDays: string[];
   equipment: Equipment[];
+  gender: Gender | '';
   age: number;
   weight: number;
   ftp?: number;

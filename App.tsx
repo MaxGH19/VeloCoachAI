@@ -83,15 +83,29 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="py-8 border-t border-white/5 bg-slate-900/50">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white text-[10px] tracking-widest uppercase opacity-50">VELOCOACH.<span className="text-emerald-500">AI</span></span>
-          </div>
-          <div className="flex gap-8 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-            <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
-            <a href="#" className="hover:text-emerald-400 transition-colors">AGB</a>
-            <span className="text-slate-800">LIVE-V1.2</span>
+      <footer className="py-8 border-t border-white/5 bg-slate-900/50 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-6">
+            {/* Logo Section */}
+            <div className="flex justify-center md:justify-start">
+              <span className="font-bold text-white text-[10px] tracking-widest uppercase opacity-50">
+                VELOCOACH.<span className="text-emerald-500">AI</span>
+              </span>
+            </div>
+            
+            {/* Center Section */}
+            <div className="flex justify-center text-center">
+              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest cursor-default select-none">
+                Built with ❤️ in Cologne
+              </span>
+            </div>
+
+            {/* Links Section */}
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+              <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
+              <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+              <span className="text-slate-800">LIVE-V1.2</span>
+            </div>
           </div>
         </div>
       </footer>

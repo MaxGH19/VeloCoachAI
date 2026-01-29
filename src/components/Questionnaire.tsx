@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { UserProfile, TrainingGoal, FitnessLevel, Equipment } from '../types.ts';
-import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS } from '../constants.ts';
+import { UserProfile, TrainingGoal, FitnessLevel, Equipment, Gender } from '../types.ts';
+import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS, GENDER_OPTIONS } from '../constants.ts';
 
 interface PlanstreckeProps {
   onSubmit: (profile: UserProfile) => void;
@@ -19,6 +20,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
     weeklyHours: 6,
     availableDays: ['Di', 'Do', 'Sa', 'So'],
     equipment: ['Road Bike'],
+    gender: '', // Kein pre-selection im default state
     age: 35,
     weight: 75,
     ftp: undefined,
@@ -48,16 +50,19 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
   const handleFinalSubmit = () => {
     const finalProfile = { ...profile };
     
+    // Hintergrundfunktion: Falls Max-Puls unbekannt, berechne 220 - Alter
+    if (metricsKnowledge === 'none' || metricsKnowledge === 'ftp') {
+      finalProfile.maxHeartRate = 220 - profile.age;
+    }
+
     if (metricsKnowledge === 'none') {
       delete finalProfile.ftp;
-      delete finalProfile.maxHeartRate;
-    } else if (metricsKnowledge === 'ftp') {
-      delete finalProfile.maxHeartRate;
     } else if (metricsKnowledge === 'hr') {
       delete finalProfile.ftp;
     }
 
-    onSubmit(finalProfile);
+    // Explicit cast since we validated gender is set before this step
+    onSubmit(finalProfile as UserProfile);
   };
 
   const toggleDay = (day: string) => {
@@ -269,7 +274,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
         return (
           <div className="space-y-8">
             <div className="space-y-2">
-              <h2 className="text-2xl md:text-3xl font-bold leading-tight">Letzte Details</h2>
+              <h2 className="text-2xl md:text-3xl font-bold leading-tight">Details zu dir</h2>
               <p className={questionClass}>Ein paar physiologische Daten für die Feinabstimmung.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -295,7 +300,41 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
               </div>
             </div>
             <div className="space-y-4">
-              <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Ausrüstung</label>
+              <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Geschlecht</label>
+              <div className="grid grid-cols-1 gap-2">
+                {GENDER_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setProfile({...profile, gender: opt.value})}
+                    className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.gender === opt.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between items-center gap-4 pt-6">
+              <button onClick={prevStep} className={secondaryBtnClass}>
+                <i className="fas fa-arrow-left mr-2"></i> Zurück
+              </button>
+              <button 
+                onClick={nextStep} 
+                className={primaryBtnClass}
+                disabled={!profile.gender}
+              >
+                Weiter <i className="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+        );
+      case 6:
+        return (
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-2xl md:text-3xl font-bold leading-tight">Ausrüstung</h2>
+              <p className={questionClass}>Welches Equipment steht dir zur Verfügung?</p>
+            </div>
+            <div className="space-y-4">
               <div className="grid grid-cols-1 gap-2">
                 {EQUIPMENT_OPTIONS.map(opt => (
                   <button
@@ -336,7 +375,7 @@ const Questionnaire: React.FC<PlanstreckeProps> = ({ onSubmit, onCancel }) => {
         <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
           <div 
             className="bg-emerald-500 h-full transition-all duration-500 ease-out" 
-            style={{ width: `${(step / 5) * 100}%` }}
+            style={{ width: `${(step / 6) * 100}%` }}
           ></div>
         </div>
       </div>

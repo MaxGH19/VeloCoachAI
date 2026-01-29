@@ -1,5 +1,5 @@
 
-import { TrainingGoal, FitnessLevel, Equipment } from './types.ts';
+import { TrainingGoal, FitnessLevel, Equipment, Gender } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [
   { value: 'Gran Fondo', label: 'Gran Fondo / Langstrecke', icon: 'fa-route' },
@@ -21,4 +21,10 @@ export const EQUIPMENT_OPTIONS: { value: Equipment; label: string }[] = [
   { value: 'Indoor Trainer', label: 'Smart Trainer' },
   { value: 'Power Meter', label: 'Wattmessgerät' },
   { value: 'Heart Rate Monitor', label: 'Pulsgurt' },
+];
+
+export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'männlich', label: 'Männlich' },
+  { value: 'weiblich', label: 'Weiblich' },
+  { value: 'keine Angabe', label: 'Keine Angabe' },
 ];

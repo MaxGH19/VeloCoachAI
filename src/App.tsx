@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
@@ -85,20 +86,33 @@ const App: React.FC = () => {
 
       <footer className="py-10 border-t border-white/5 bg-slate-900/50 relative z-10 shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-8 text-center md:text-left">
+            {/* Logo Section */}
+            <div className="flex items-center justify-center md:justify-start gap-2">
               <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
                 <i className="fas fa-bolt text-emerald-500 text-[10px]"></i>
               </div>
-              <span className="font-bold text-white text-sm tracking-wider uppercase">VELOCOACH.<span className="text-emerald-500">AI</span></span>
+              <span className="font-bold text-white text-sm tracking-wider uppercase">
+                VELOCOACH.<span className="text-emerald-500">AI</span>
+              </span>
             </div>
-            <div className="flex gap-8 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-              <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
-              <a href="#" className="hover:text-emerald-400 transition-colors">AGB</a>
-              <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+
+            {/* Center Section */}
+            <div className="flex justify-center">
+              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest cursor-default select-none">
+                Built with ❤️ in Cologne
+              </span>
             </div>
-            <div className="text-slate-600 text-[10px] font-mono">
-              VER. 1.0.5-STABLE
+
+            {/* Links and Info Section */}
+            <div className="flex flex-col md:items-end gap-3">
+              <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <a href="#" className="hover:text-emerald-400 transition-colors">Datenschutz</a>
+                <a href="#" className="hover:text-emerald-400 transition-colors">Impressum</a>
+              </div>
+              <div className="text-slate-600 text-[10px] font-mono">
+                VER. 1.0.5-STABLE
+              </div>
             </div>
           </div>
         </div>

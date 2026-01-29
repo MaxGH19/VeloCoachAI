@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
@@ -19,7 +20,8 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
        - Fitness: Fokus auf Kalorienverbrauch durch Volumen, moderat (Z1 & Z2).
        - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
     5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
-    6. SPRACHE: Deutsch.
+    6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender} für die Intensitätsberechnung.
+    7. SPRACHE: Deutsch.
   `;
 
   const prompt = `
@@ -29,7 +31,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     - Verfügbarkeit: ${profile.weeklyHours} Stunden/Woche
     - Trainingstage: ${profile.availableDays.join(', ')}
     - Ausrüstung: ${profile.equipment.join(', ')}
-    - Profil: ${profile.age} Jahre, ${profile.weight}kg
+    - Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
     ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
     ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
 

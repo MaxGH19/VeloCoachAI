@@ -13,6 +13,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
   const systemInstruction = `
     Du bist ein weltklasse Radsport-Trainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
+    Berücksichtige physiologische Unterschiede basierend auf Alter, Gewicht und Geschlecht.
     Regeln:
     - 3 Wochen Belastung, 1 Woche Erholung.
     - Nutze Zonen Z1 bis Z5.
@@ -27,7 +28,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     Zeit: ${profile.weeklyHours}h/Woche
     Tage: ${profile.availableDays.join(', ')}
     Equipment: ${profile.equipment.join(', ')}
-    Profil: ${profile.age} Jahre, ${profile.weight}kg
+    Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
     ${profile.ftp ? `FTP: ${profile.ftp}W` : ''}
     ${profile.maxHeartRate ? `MaxHR: ${profile.maxHeartRate}bpm` : ''}
   `;
