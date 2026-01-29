@@ -3,8 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/VeloCoachAI/',
+  // Nutze './' für relative Pfade – das funktioniert auf Netlify UND GitHub Pages
+  base: './', 
   build: {
+    outDir: 'dist',
     rollupOptions: {
       input: {
         main: './index.html'
@@ -12,6 +14,7 @@ export default defineConfig({
     }
   },
   define: {
-    'process.env': {}
+    // Vite nutzt import.meta.env, aber das hier hilft alten Libs
+    'process.env': {} 
   }
 })
