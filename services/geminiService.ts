@@ -3,44 +3,42 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // 1. Prüfen, ob wir einen Key haben. Falls nicht, versuchen wir den AI Studio Dialog zu nutzen.
+  // 1. Key-Akquise: Priorität auf process.env, Fallback auf aistudio window helper
   let apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "undefined" || apiKey === "") {
     const aistudio = (window as any).aistudio;
-    if (aistudio) {
+    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
       const hasKey = await aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        // Dies öffnet den offiziellen Key-Auswahl-Dialog, falls kein Key im Environment ist
+      if (!hasKey && typeof aistudio.openSelectKey === 'function') {
         await aistudio.openSelectKey();
       }
-      // Nach dem Dialog (oder falls bereits gewählt) ist der Key via process.env verfügbar
-      apiKey = process.env.API_KEY;
+      apiKey = process.env.API_KEY; // Erneuter Versuch nach Dialog
     }
   }
 
-  // 2. Erst jetzt die Instanz erstellen
-  const ai = new GoogleGenAI({ apiKey: apiKey || "" });
+  if (!apiKey) {
+    throw new Error("API_KEY_MISSING");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemInstruction = `
-    Du bist ein erfahrener Radsport-Cheftrainer. Erstelle einen hochgradig personalisierten 4-Wochen-Trainingsplan im JSON-Format.
-    Wissenschaftliche Prinzipien:
-    1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung).
-    2. INTENSITÄT: Nutze Zonen Z1-Z5 basierend auf FTP oder MaxHR.
-    3. STRUKTUR: Jede Session braucht Titel, Dauer, Intensität (Low, Moderate, High, Rest), Beschreibung und Intervalle.
-    Antworte NUR mit validem JSON. Sprache: Deutsch.
+    Du bist ein weltklasse Radsport-Trainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
+    Wissenschaftliche Prinzipien: Periodisierung (Wochen 1-3 Steigerung, Woche 4 Entlastung), Zonen Z1-Z5.
+    Sprache: Deutsch. Antworte NUR mit validem JSON.
   `;
 
   const prompt = `
-    Erstelle einen 4-Wochen-Radtrainingsplan für diesen Athleten:
+    Erstelle einen 4-Wochen-Radtrainingsplan für:
     - Ziel: ${profile.goal}
-    - Level: ${profile.level}
-    - Zeit: ${profile.weeklyHours}h/Woche
+    - Fitness: ${profile.level}
+    - Zeitbudget: ${profile.weeklyHours}h/Woche
     - Tage: ${profile.availableDays.join(', ')}
     - Equipment: ${profile.equipment.join(', ')}
-    - Profil: ${profile.age} Jahre, ${profile.weight}kg
-    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
-    ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
+    - Athlet: ${profile.age} Jahre, ${profile.weight}kg
+    ${profile.ftp ? `- FTP: ${profile.ftp}W` : ''}
+    ${profile.maxHeartRate ? `- MaxHR: ${profile.maxHeartRate}bpm` : ''}
   `;
 
   try {
@@ -97,13 +95,11 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     });
 
     const result = response.text;
-    if (!result) throw new Error("Keine Antwort vom Trainer erhalten.");
+    if (!result) throw new Error("EMPTY_RESPONSE");
     return JSON.parse(result);
   } catch (error: any) {
-    // Falls ein "Not found" Fehler kommt, Key-Selection resetten (laut Vorgabe)
-    if (error.message?.includes("entity was not found") && (window as any).aistudio) {
-      await (window as any).aistudio.openSelectKey();
-    }
+    console.error("Gemini Engine Error:", error);
+    if (error.message?.includes("API key not valid")) throw new Error("INVALID_KEY");
     throw error;
   }
 }

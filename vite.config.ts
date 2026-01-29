@@ -5,12 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   define: {
-    // Vite ersetzt process.env.API_KEY im Browser-Bundle
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ""),
   },
-  base: './', 
+  server: {
+    host: true,
+    port: 3000
+  },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         main: './index.html'
