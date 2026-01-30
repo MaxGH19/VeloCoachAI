@@ -3,39 +3,53 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  const apiKey = process.env.API_KEY;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  if (!apiKey) {
-    throw new Error("API_KEY_MISSING");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const preferenceInstruction = profile.trainingPreference === 'weekday-indoor' 
+    ? 'WICHTIG: Strukturiere Wochentage (Mo-Fr) als Indoor-Einheiten (kürzer, Fokus auf Intervalle/Intensität) und Wochenenden als Outdoor-Einheiten (länger, Fokus auf Volumen/LIT).'
+    : profile.trainingPreference === 'always-indoor'
+    ? 'WICHTIG: Plane alle Einheiten optimiert für das Indoor-Training auf dem Smart Trainer.'
+    : profile.trainingPreference === 'always-outdoor'
+    ? 'WICHTIG: Plane alle Einheiten optimiert für das Outdoor-Training.'
+    : '';
 
   const systemInstruction = `
-    Du bist ein weltklasse Radsport-Trainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
-    Berücksichtige physiologische Unterschiede basierend auf Alter, Gewicht und Geschlecht.
-    Regeln:
-    - 3 Wochen Belastung, 1 Woche Erholung.
-    - Nutze Zonen Z1 bis Z5.
-    - Sprache: Deutsch.
-    - Antworte ausschließlich mit validem JSON.
+    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 
+    Deine Aufgabe ist es, hochgradig personalisierte 4-Wochen-Trainingspläne im JSON-Format zu erstellen.
+
+    Befolge strikt diese wissenschaftlichen Prinzipien:
+    1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung/Regeneration um -40% TSS gegenüber Woche 3).
+    2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
+    3. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten. Intervalle präzise beschreiben (z.B. "4x8 Min in Z4 mit 4 Min Pause in Z1").
+    4. ZIELSPEZIFISCHER FOKUS:
+       - Gran Fondo: Fokus auf Ausdauer, Fettstoffwechsel, Kraftausdauer (Z2 & Z3).
+       - Kriterium: Fokus auf Sprints, anaerobe Kapazität, Tempowechsel (Z5 & Sprints).
+       - Fitness: Fokus auf Kalorienverbrauch durch Volumen, moderat (Z1 & Z2).
+       - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
+    5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
+    6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender} für die Intensitätsberechnung.
+    7. ${preferenceInstruction}
+    8. SPRACHE: Deutsch.
   `;
 
   const prompt = `
-    Erstelle einen Radtrainingsplan (4 Wochen) für:
-    Ziel: ${profile.goal}
-    Level: ${profile.level}
-    Zeit: ${profile.weeklyHours}h/Woche
-    Tage: ${profile.availableDays.join(', ')}
-    Equipment: ${profile.equipment.join(', ')}
-    Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
-    ${profile.ftp ? `FTP: ${profile.ftp}W` : ''}
-    ${profile.maxHeartRate ? `MaxHR: ${profile.maxHeartRate}bpm` : ''}
+    Erstelle einen 4-Wochen-Radtrainingsplan für diesen Athleten:
+    - Ziel: ${profile.goal}
+    - Aktuelles Level: ${profile.level}
+    - Verfügbarkeit: ${profile.weeklyHours} Stunden/Woche
+    - Trainingstage: ${profile.availableDays.join(', ')}
+    - Ausrüstung: ${profile.equipment.join(', ')}
+    - Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
+    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
+    ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
+    ${profile.trainingPreference ? `- Bevorzugte Trainingsumgebung: ${profile.trainingPreference}` : ''}
+
+    Antworte im validen JSON-Format.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
         systemInstruction,
@@ -49,7 +63,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
               type: Type.OBJECT,
               properties: {
                 estimatedTSS: { type: Type.NUMBER },
-                weeklyVolume: { type: Type.STRING }
+                weeklyVolume: { type: Type.STRING },
               },
               required: ["estimatedTSS", "weeklyVolume"]
             },
@@ -71,7 +85,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
                         durationMinutes: { type: Type.NUMBER },
                         intensity: { type: Type.STRING, enum: ["Low", "Moderate", "High", "Rest"] },
                         description: { type: Type.STRING },
-                        intervals: { type: Type.STRING }
+                        intervals: { type: Type.STRING },
                       },
                       required: ["day", "type", "title", "durationMinutes", "intensity", "description"]
                     }
@@ -86,12 +100,22 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
       }
     });
 
-    const resultText = response.text;
-    if (!resultText) throw new Error("EMPTY_RESPONSE");
+    const text = response.text;
+    if (!text) throw new Error("EMPTY_RESPONSE");
     
-    return JSON.parse(resultText);
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    throw error;
+    return JSON.parse(text) as FullTrainingPlan;
+  } catch (err: any) {
+    console.error("Gemini Trainer Error:", err);
+    
+    const errorString = err.toString().toLowerCase();
+    if (errorString.includes("429") || errorString.includes("exhausted") || errorString.includes("limit")) {
+      throw new Error("RATE_LIMIT_REACHED");
+    }
+    
+    if (errorString.includes("api_key") || errorString.includes("unauthorized")) {
+      throw new Error("INVALID_API_KEY");
+    }
+
+    throw new Error(err.message || "Es gab ein Problem bei der Planerstellung.");
   }
 }

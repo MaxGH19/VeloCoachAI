@@ -3,6 +3,7 @@ export type TrainingGoal = 'Gran Fondo' | 'Kriterium' | 'Fitness' | 'All-round';
 export type FitnessLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type Equipment = 'Smart Trainer' | 'Power Meter' | 'Heart Rate Monitor';
 export type Gender = 'männlich' | 'weiblich' | 'keine Angabe';
+export type TrainingPreference = 'weekday-indoor' | 'always-outdoor' | 'always-indoor' | 'flexible';
 
 export interface UserProfile {
   goal: TrainingGoal;
@@ -15,6 +16,7 @@ export interface UserProfile {
   weight: number | undefined;
   ftp?: number;
   maxHeartRate?: number;
+  trainingPreference?: TrainingPreference;
 }
 
 export interface TrainingSession {

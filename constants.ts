@@ -1,5 +1,5 @@
 
-import { TrainingGoal, FitnessLevel, Equipment, Gender } from './types.ts';
+import { TrainingGoal, FitnessLevel, Equipment, Gender, TrainingPreference } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [
   { value: 'Gran Fondo', label: 'Gran Fondo / Langstrecke', icon: 'fa-route' },
@@ -26,4 +26,11 @@ export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'männlich', label: 'Männlich' },
   { value: 'weiblich', label: 'Weiblich' },
   { value: 'keine Angabe', label: 'Keine Angabe' },
+];
+
+export const PREFERENCE_OPTIONS: { value: TrainingPreference; label: string; icon: string }[] = [
+  { value: 'weekday-indoor', label: 'Unter der Woche indoor, am Wochenende outdoor', icon: 'fa-calendar-day' },
+  { value: 'always-outdoor', label: 'Immer bevorzugt outdoor', icon: 'fa-sun' },
+  { value: 'always-indoor', label: 'Immer bevorzugt indoor', icon: 'fa-house-user' },
+  { value: 'flexible', label: 'Keine Regelmäßigkeit', icon: 'fa-shuffle' },
 ];

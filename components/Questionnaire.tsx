@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { UserProfile, TrainingGoal, FitnessLevel, Equipment, Gender } from '../types.ts';
-import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS, GENDER_OPTIONS } from '../constants.ts';
+import { UserProfile, TrainingGoal, FitnessLevel, Equipment, Gender, TrainingPreference } from '../types.ts';
+import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS, GENDER_OPTIONS, PREFERENCE_OPTIONS } from '../constants.ts';
 
 interface QuestionnaireProps {
   onSubmit: (profile: UserProfile) => void;
@@ -26,10 +26,22 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     weight: undefined,
     ftp: undefined,
     maxHeartRate: undefined,
+    trainingPreference: undefined,
   });
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
+
+  const shouldShowPreferenceStep = () => {
+    const hasSmartTrainer = profile.equipment.includes('Smart Trainer');
+    const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+    const weekends = ['Sa', 'So'];
+    const hasWeekdays = profile.availableDays.some(d => weekdays.includes(d));
+    const hasWeekends = profile.availableDays.some(d => weekends.includes(d));
+    return hasSmartTrainer && hasWeekdays && hasWeekends;
+  };
+
+  const totalSteps = shouldShowPreferenceStep() ? 7 : 6;
 
   const handleStep4Next = () => {
     const newErrors: { ftp?: boolean; hr?: boolean } = {};
@@ -52,6 +64,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     if (profile.age && profile.weight && profile.gender) {
       setErrors({});
       nextStep();
+    }
+  };
+
+  const handleStep6Next = () => {
+    if (shouldShowPreferenceStep()) {
+      nextStep();
+    } else {
+      handleFinalSubmit();
     }
   };
 
@@ -357,7 +377,38 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
-              <button onClick={handleFinalSubmit} className={primaryBtnClass}>
+              <button onClick={handleStep6Next} className={primaryBtnClass}>
+                {shouldShowPreferenceStep() ? 'Weiter' : 'Plan erstellen'}
+              </button>
+            </div>
+          </div>
+        );
+      case 7:
+        return (
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-2xl md:text-3xl font-bold leading-tight">Trainingspräferenzen</h2>
+              <p className={questionClass}>Wie gestaltet sich deine Trainingswoche?</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {PREFERENCE_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setProfile({ ...profile, trainingPreference: opt.value })}
+                  className={`p-5 rounded-2xl text-left transition-all border-2 flex items-center gap-4 ${profile.trainingPreference === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${profile.trainingPreference === opt.value ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-500'}`}>
+                    <i className={`fas ${opt.icon} text-xl`}></i>
+                  </div>
+                  <div className="font-bold text-lg leading-tight">{opt.label}</div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between items-center gap-4 pt-6">
+              <button onClick={prevStep} className={secondaryBtnClass}>
+                <i className="fas fa-arrow-left mr-2"></i> Zurück
+              </button>
+              <button onClick={handleFinalSubmit} className={primaryBtnClass} disabled={!profile.trainingPreference}>
                 Plan erstellen
               </button>
             </div>
@@ -374,8 +425,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
         <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
           <div 
             className="bg-emerald-500 h-full transition-all duration-500 ease-out" 
-            style={{ width: `${(step / 6) * 100}%` }}
+            style={{ width: `${(step / totalSteps) * 100}%` }}
           ></div>
+        </div>
+        <div className="flex justify-between mt-2 px-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Schritt {step} von {totalSteps}</span>
         </div>
       </div>
       

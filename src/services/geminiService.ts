@@ -3,11 +3,18 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // Strikte Einhaltung der Vorgabe: Nur process.env.API_KEY ohne Fallback verwenden
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  const preferenceInstruction = profile.trainingPreference === 'weekday-indoor' 
+    ? 'WICHTIG: Strukturiere Wochentage (Mo-Fr) als Indoor-Einheiten (kürzer, Fokus auf Intervalle/Intensität) und Wochenenden als Outdoor-Einheiten (länger, Fokus auf Volumen/LIT).'
+    : profile.trainingPreference === 'always-indoor'
+    ? 'WICHTIG: Plane alle Einheiten optimiert für das Indoor-Training auf dem Smart Trainer.'
+    : profile.trainingPreference === 'always-outdoor'
+    ? 'WICHTIG: Plane alle Einheiten optimiert für das Outdoor-Training.'
+    : '';
+
   const systemInstruction = `
-    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 
+    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft and Leistungsdiagnostik. 
     Deine Aufgabe ist es, hochgradig personalisierte 4-Wochen-Trainingspläne im JSON-Format zu erstellen.
 
     Befolge strikt diese wissenschaftlichen Prinzipien:
@@ -21,7 +28,8 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
        - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
     5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
     6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender} für die Intensitätsberechnung.
-    7. SPRACHE: Deutsch.
+    7. ${preferenceInstruction}
+    8. SPRACHE: Deutsch.
   `;
 
   const prompt = `
@@ -34,6 +42,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     - Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
     ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
     ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
+    ${profile.trainingPreference ? `- Bevorzugte Trainingsumgebung: ${profile.trainingPreference}` : ''}
 
     Antworte im validen JSON-Format.
   `;
@@ -92,11 +101,21 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     });
 
     const text = response.text;
-    if (!text) throw new Error("Keine Antwort vom Trainer erhalten.");
+    if (!text) throw new Error("EMPTY_RESPONSE");
     
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
     console.error("Gemini Trainer Error:", err);
-    throw new Error(`Trainingsplan-Erstellung fehlgeschlagen: ${err.message}`);
+    
+    const errorString = err.toString().toLowerCase();
+    if (errorString.includes("429") || errorString.includes("exhausted") || errorString.includes("limit")) {
+      throw new Error("RATE_LIMIT_REACHED");
+    }
+    
+    if (errorString.includes("api_key") || errorString.includes("unauthorized")) {
+      throw new Error("INVALID_API_KEY");
+    }
+
+    throw new Error(err.message || "Es gab ein Problem bei der Planerstellung.");
   }
 }
