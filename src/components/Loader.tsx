@@ -29,7 +29,7 @@ const Loader: React.FC = () => {
         </div>
       </div>
       <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent text-center">
-        VeloCoach.AI arbeitet für dich
+        Dein individueller Trainingsplan wird erstellt
       </h2>
       <p className="text-emerald-400 font-mono tracking-widest text-sm uppercase animate-pulse text-center">
         {tips[tipIndex]}

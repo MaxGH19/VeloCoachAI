@@ -20,6 +20,7 @@ enum AppState {
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
 
   const handleStart = () => {
@@ -29,11 +30,12 @@ const App: React.FC = () => {
   
   const handleCancel = () => setState(AppState.LANDING);
 
-  const handleSubmit = async (profile: UserProfile) => {
+  const handleSubmit = async (userProfile: UserProfile) => {
+    setProfile(userProfile);
     setState(AppState.LOADING);
     setError(null);
     try {
-      const generatedPlan = await generateTrainingPlan(profile);
+      const generatedPlan = await generateTrainingPlan(userProfile);
       setPlan(generatedPlan);
       setState(AppState.DISPLAY);
     } catch (err: any) {
@@ -59,6 +61,7 @@ const App: React.FC = () => {
 
   const handleReset = () => {
     setPlan(null);
+    setProfile(null);
     setState(AppState.LANDING);
     setError(null);
   };
@@ -101,7 +104,7 @@ const App: React.FC = () => {
           {state === AppState.LANDING && <Hero onStart={handleStart} />}
           {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />}
           {state === AppState.LOADING && <Loader />}
-          {state === AppState.DISPLAY && plan && <TrainingPlanDisplay plan={plan} onReset={handleReset} />}
+          {state === AppState.DISPLAY && plan && profile && <TrainingPlanDisplay plan={plan} profile={profile} onReset={handleReset} />}
           {state === AppState.PRIVACY && <LegalView type="privacy" onClose={() => setState(AppState.LANDING)} />}
           {state === AppState.IMPRINT && <LegalView type="imprint" onClose={() => setState(AppState.LANDING)} />}
         </div>

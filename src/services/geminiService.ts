@@ -20,16 +20,17 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     Befolge strikt diese wissenschaftlichen Prinzipien:
     1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung/Regeneration um -40% TSS gegenüber Woche 3).
     2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
-    3. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten. Intervalle präzise beschreiben (z.B. "4x8 Min in Z4 mit 4 Min Pause in Z1").
-    4. ZIELSPEZIFISCHER FOKUS:
-       - Gran Fondo: Fokus auf Ausdauer, Fettstoffwechsel, Kraftausdauer (Z2 & Z3).
-       - Kriterium: Fokus auf Sprints, anaerobe Kapazität, Tempowechsel (Z5 & Sprints).
-       - Fitness: Fokus auf Kalorienverbrauch durch Volumen, moderat (Z1 & Z2).
-       - All-round: Fokus auf Steigerung der Schwellenleistung (Z4 / Sweet Spot).
-    5. LEISTUNGSWERTE: Wenn FTP oder Maximalpuls gegeben sind, berechne konkrete Zielvorgaben in Watt oder bpm für die Intervalle.
+    3. INTENSITÄTSZONEN (Puls-basiert): Z1 (<60% MaxHR), Z2 (60-70%), Z3 (70-80%), Z4 (80-90%), Z5 (90-100%).
+    4. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten.
+    5. LEISTUNGSWERTE & INTERVALLE (ESSENTIELL): 
+       Das Feld 'intervals' darf NIEMALS nur die Zone (z.B. 'Z2') enthalten. Es muss IMMER konkrete Zielwerte enthalten:
+       - WENN FTP vorhanden (${profile.ftp || 'nicht bekannt'}): Nutze NUR WATT-Bereiche. Beispiel: '4x8 Min @ 220-240W (Z4), 4 Min Pause @ 130W (Z1)'.
+       - WENN KEIN FTP, aber Max-Puls vorhanden (${profile.maxHeartRate || 'nicht bekannt'}): Nutze NUR BPM-Bereiche. Beispiel: '4x8 Min @ 155-165 bpm (Z4), 4 Min Pause @ 115 bpm (Z1)'.
+       - Berechne die Werte mathematisch präzise basierend auf den oben genannten Prozenten.
     6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender || 'männlich'} für die Intensitätsberechnung.
     7. ${preferenceInstruction}
     8. SPRACHE: Deutsch.
+    9. WOCHEN-FOKUS: Das Feld 'focus' pro Woche MUSS extrem kurz sein (maximal 1-2 Begriffe, z.B. 'Grundlage', 'Sweet Spot', 'Peak', 'Tapering').
   `;
 
   const prompt = `
@@ -44,7 +45,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
     ${profile.trainingPreference ? `- Präferenz: ${profile.trainingPreference}` : ''}
 
-    Antworte im validen JSON-Format.
+    Antworte im validen JSON-Format. Stelle sicher, dass 'intervals' alle nötigen Watt- oder Puls-Vorgaben enthält.
   `;
 
   try {
