@@ -13,6 +13,8 @@ type MetricsKnowledge = 'both' | 'ftp' | 'hr' | 'none';
 const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => {
   const [step, setStep] = useState(1);
   const [metricsKnowledge, setMetricsKnowledge] = useState<MetricsKnowledge>('both');
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [editingFields, setEditingFields] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean; details?: boolean }>({});
   
   const [profile, setProfile] = useState<UserProfile>({
@@ -43,19 +45,76 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
 
   const totalSteps = shouldShowPreferenceStep() ? 7 : 6;
 
-  const handleStep4Next = () => {
-    const newErrors: { ftp?: boolean; hr?: boolean } = {};
-    if ((metricsKnowledge === 'both' || metricsKnowledge === 'ftp') && !profile.ftp) {
-      newErrors.ftp = true;
+  // Hours Logic based on Day Count
+  const getAllowedHoursRange = (dayCount: number) => {
+    switch (dayCount) {
+      case 1: return { min: 2, max: 5 };
+      case 2: return { min: 2, max: 8 };
+      case 3: return { min: 3, max: 12 };
+      case 4: return { min: 4, max: 16 };
+      case 5: return { min: 6, max: 20 };
+      case 6: return { min: 8, max: 25 };
+      case 7: return { min: 10, max: 25 };
+      default: return { min: 2, max: 25 }; // Fallback
     }
-    if ((metricsKnowledge === 'both' || metricsKnowledge === 'hr') && !profile.maxHeartRate) {
-      newErrors.hr = true;
-    }
+  };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-    } else {
-      setErrors({});
+  // Validation Logic for Metrics
+  const getFtpValidation = (val?: number) => {
+    if (val === undefined) return null;
+    if (val < 40 || val > 600) return { type: 'error', message: "Der Wert ist nicht plausibel. Bitte trage einen Wert zwischen 40 und 600 Watt ein." };
+    if (val >= 40 && val <= 80) return { type: 'warning', message: "Der Wert ist sehr niedrig - bist du dir sicher?" };
+    if (val >= 450 && val <= 600) return { type: 'warning', message: "Der Wert ist außergewöhnlich hoch und auf Profi-Niveau - bist du dir sicher?" };
+    return null;
+  };
+
+  const getHrValidation = (val?: number) => {
+    if (val === undefined) return null;
+    if (val < 120 || val > 220) return { type: 'error', message: "Der Wert ist nicht plausibel. Bitte trage einen Wert zwischen 120 und 220 bpm ein." };
+    if (val >= 120 && val <= 150) return { type: 'warning', message: "Der Puls ist sehr niedrig für einen Maximalwert - bist du dir sicher?" };
+    if (val >= 205 && val <= 220) return { type: 'warning', message: "Der Puls ist außergewöhnlich hoch - bist du dir sicher?" };
+    return null;
+  };
+
+  const startEditing = (field: string) => {
+    setEditingFields(prev => {
+      const next = new Set(prev);
+      next.add(field);
+      return next;
+    });
+  };
+
+  const stopEditing = (field: string) => {
+    setEditingFields(prev => {
+      const next = new Set(prev);
+      next.delete(field);
+      return next;
+    });
+    setTouched(prev => {
+      const next = new Set(prev);
+      next.add(field);
+      return next;
+    });
+  };
+
+  const ftpValidation = getFtpValidation(profile.ftp);
+  const hrValidation = getHrValidation(profile.maxHeartRate);
+
+  const isStep4Blocked = () => {
+    if (metricsKnowledge === 'both') {
+      return !profile.ftp || !profile.maxHeartRate || ftpValidation?.type === 'error' || hrValidation?.type === 'error';
+    }
+    if (metricsKnowledge === 'ftp') {
+      return !profile.ftp || ftpValidation?.type === 'error';
+    }
+    if (metricsKnowledge === 'hr') {
+      return !profile.maxHeartRate || hrValidation?.type === 'error';
+    }
+    return false;
+  };
+
+  const handleStep4Next = () => {
+    if (!isStep4Blocked()) {
       nextStep();
     }
   };
@@ -92,11 +151,23 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
   };
 
   const toggleDay = (day: string) => {
+    const newDays = profile.availableDays.includes(day)
+      ? profile.availableDays.filter(d => d !== day)
+      : [...profile.availableDays, day];
+    
+    const dayCount = newDays.length;
+    let newHours = profile.weeklyHours;
+
+    if (dayCount > 0) {
+      const { min, max } = getAllowedHoursRange(dayCount);
+      // Auto-adjust hours to ~45-50% of the allowed range
+      newHours = Math.floor(min + (max - min) * 0.45);
+    }
+
     setProfile(p => ({
       ...p,
-      availableDays: p.availableDays.includes(day)
-        ? p.availableDays.filter(d => d !== day)
-        : [...p.availableDays, day]
+      availableDays: newDays,
+      weeklyHours: newHours
     }));
   };
 
@@ -174,6 +245,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
           </div>
         );
       case 3:
+        const dayCount = profile.availableDays.length;
+        const { min, max } = getAllowedHoursRange(dayCount);
         return (
           <div className="space-y-8">
             <div className="space-y-2">
@@ -183,17 +256,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <label className="text-slate-400 text-xs uppercase tracking-wider font-bold">Stunden pro Woche</label>
-                <span className="text-3xl font-bold text-emerald-400">{profile.weeklyHours}h</span>
+                <span className="text-xl font-bold text-emerald-400">{profile.weeklyHours} Stunden</span>
               </div>
               <input 
-                type="range" min="2" max="25" step="1"
+                type="range" 
+                min={min} 
+                max={max} 
+                step="1"
+                disabled={dayCount === 0}
                 value={profile.weeklyHours}
                 onChange={(e) => setProfile({...profile, weeklyHours: parseInt(e.target.value)})}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-20"
               />
             </div>
             <div className="space-y-4">
-              <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Bevorzugte Tage</label>
+              <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Bevorzugte Tage ({dayCount})</label>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {DAY_OPTIONS.map(day => (
                   <button
@@ -205,18 +282,24 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                   </button>
                 ))}
               </div>
+              {dayCount === 0 && (
+                <p className="text-[11px] text-amber-500 italic font-bold">Bitte wähle mindestens einen Trainingstag aus.</p>
+              )}
             </div>
             <div className="flex justify-between items-center gap-4 pt-6">
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
-              <button onClick={nextStep} className={primaryBtnClass}>
+              <button onClick={nextStep} className={primaryBtnClass} disabled={dayCount === 0}>
                 Weiter <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>
           </div>
         );
       case 4:
+        const showFtpVal = touched.has('ftp') && !editingFields.has('ftp');
+        const showHrVal = touched.has('hr') && !editingFields.has('hr');
+
         return (
           <div className="space-y-8">
             <div className="space-y-2">
@@ -235,6 +318,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                   key={opt.id}
                   onClick={() => {
                     setMetricsKnowledge(opt.id as MetricsKnowledge);
+                    setTouched(new Set());
+                    setEditingFields(new Set());
                     setErrors({});
                   }}
                   className={`p-4 rounded-xl text-left border-2 transition-all ${metricsKnowledge === opt.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}
@@ -252,15 +337,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                     <input 
                       type="number" 
                       value={profile.ftp ?? ''}
+                      onFocus={() => startEditing('ftp')}
+                      onBlur={() => stopEditing('ftp')}
                       onChange={(e) => {
+                        startEditing('ftp');
                         setProfile({...profile, ftp: e.target.value ? parseInt(e.target.value) : undefined});
-                        if (e.target.value) setErrors(prev => ({ ...prev, ftp: false }));
                       }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${errors.ftp ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
+                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showFtpVal && ftpValidation?.type === 'error' ? 'border-red-500' : showFtpVal && ftpValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">Watt</span>
                   </div>
-                  {errors.ftp && <p className="text-red-500 text-xs font-bold italic">Pflichtfeld für diese Option</p>}
+                  {showFtpVal && ftpValidation && (
+                    <p className={`text-[11px] font-bold italic ${ftpValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                      {ftpValidation.message}
+                    </p>
+                  )}
                 </div>
               )}
               
@@ -271,14 +362,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                     <input 
                       type="number" 
                       value={profile.maxHeartRate ?? ''}
+                      onFocus={() => startEditing('hr')}
+                      onBlur={() => stopEditing('hr')}
                       onChange={(e) => {
+                        startEditing('hr');
                         setProfile({...profile, maxHeartRate: e.target.value ? parseInt(e.target.value) : undefined});
-                        if (e.target.value) setErrors(prev => ({ ...prev, hr: false }));
                       }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${errors.hr ? 'border-red-500' : 'border-white/10 focus:border-emerald-500'}`}
+                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showHrVal && hrValidation?.type === 'error' ? 'border-red-500' : showHrVal && hrValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`}
                     />
                   </div>
-                  {errors.hr && <p className="text-red-500 text-xs font-bold italic">Pflichtfeld für diese Option</p>}
+                  {showHrVal && hrValidation && (
+                    <p className={`text-[11px] font-bold italic ${hrValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                      {hrValidation.message}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -287,7 +384,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               <button onClick={prevStep} className={secondaryBtnClass}>
                 <i className="fas fa-arrow-left mr-2"></i> Zurück
               </button>
-              <button onClick={handleStep4Next} className={primaryBtnClass}>
+              <button 
+                onClick={handleStep4Next} 
+                className={primaryBtnClass}
+                disabled={isStep4Blocked()}
+              >
                 Weiter <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>
