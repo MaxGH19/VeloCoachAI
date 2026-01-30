@@ -42,17 +42,17 @@ const App: React.FC = () => {
       let message = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.";
       let isRateLimit = false;
 
-      if (err.message === "RATE_LIMIT_REACHED") {
-        message = "Der KI-Coach ist gerade überlastet (Limit erreicht). Bitte warte eine Minute und versuche es erneut.";
+      const errStr = err.message || "";
+      if (errStr.includes("RATE_LIMIT_REACHED")) {
+        message = "Der KI-Coach ist gerade überlastet (Limit erreicht). Bitte warte kurz und versuche es erneut.";
         isRateLimit = true;
-      } else if (err.message === "INVALID_API_KEY") {
-        message = "Konfigurationsfehler: Der API-Schlüssel ist ungültig.";
-      } else if (err.message === "EMPTY_RESPONSE") {
-        message = "Der KI-Coach hat keine Daten geliefert. Bitte versuche es erneut.";
+      } else if (errStr.includes("INVALID_API_KEY")) {
+        message = "Konfigurationsfehler: Der API-Schlüssel ist ungültig oder fehlt.";
+      } else if (errStr.includes("EMPTY_RESPONSE")) {
+        message = "Der KI-Coach hat keine Daten geliefert. Bitte versuche es noch einmal.";
       }
 
       setError({ message, isRateLimit });
-      // Bei Fehler zurück zum Questionnaire, damit Daten nicht verloren gehen
       setState(AppState.QUESTIONNAIRE);
     }
   };
@@ -71,7 +71,7 @@ const App: React.FC = () => {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
               <i className="fas fa-bolt text-slate-950 text-sm"></i>
             </div>
-            <span className="font-extrabold text-xl tracking-tighter uppercase text-white">VELOCOACH.<span className="text-emerald-500">AI</span></span>
+            <span className="font-extrabold text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
           <button className="px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold hover:bg-emerald-400 transition-all">
             Login
@@ -86,11 +86,11 @@ const App: React.FC = () => {
               <div className={`w-10 h-10 rounded-full ${error.isRateLimit ? 'bg-amber-500/10' : 'bg-red-500/10'} flex items-center justify-center shrink-0 mt-0.5`}>
                 <i className={`fas ${error.isRateLimit ? 'fa-hourglass-half' : 'fa-exclamation-triangle'}`}></i>
               </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit Erreicht' : 'Systemfehler'}</p>
+              <div className="flex-grow">
+                <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit Erreicht' : 'Systemfehler'}</p>
                 <p className="text-sm font-bold leading-relaxed">{error.message}</p>
               </div>
-              <button onClick={() => setError(null)} className="ml-auto text-slate-500 hover:text-white transition-colors">
+              <button onClick={() => setError(null)} className="text-slate-500 hover:text-white transition-colors">
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -99,21 +99,9 @@ const App: React.FC = () => {
 
         <div className="flex-grow flex flex-col justify-center relative">
           {state === AppState.LANDING && <Hero onStart={handleStart} />}
-          
-          {state === AppState.QUESTIONNAIRE && (
-            <div className="w-full">
-              <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />
-            </div>
-          )}
-          
+          {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />}
           {state === AppState.LOADING && <Loader />}
-          
-          {state === AppState.DISPLAY && plan && (
-            <div className="w-full">
-              <TrainingPlanDisplay plan={plan} onReset={handleReset} />
-            </div>
-          )}
-
+          {state === AppState.DISPLAY && plan && <TrainingPlanDisplay plan={plan} onReset={handleReset} />}
           {state === AppState.PRIVACY && <LegalView type="privacy" onClose={() => setState(AppState.LANDING)} />}
           {state === AppState.IMPRINT && <LegalView type="imprint" onClose={() => setState(AppState.LANDING)} />}
         </div>
@@ -132,21 +120,17 @@ const App: React.FC = () => {
                 </span>
               </div>
             </div>
-
             <div className="flex justify-center">
               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest cursor-default select-none">
                 Built with ❤️ in Cologne
               </span>
             </div>
-
             <div className="flex flex-col md:items-end gap-3">
               <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-[10px] font-mono">
-                VER. 1.0.6-STABLE
-              </div>
+              <div className="text-slate-600 text-[10px] font-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
             </div>
           </div>
         </div>
