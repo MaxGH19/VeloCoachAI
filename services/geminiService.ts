@@ -49,7 +49,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         systemInstruction,
@@ -106,9 +106,13 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
     console.error("Gemini API Error:", err);
-    const errText = err.toString();
-    if (errText.includes("429") || errText.includes("limit")) throw new Error("RATE_LIMIT_REACHED");
-    if (errText.includes("api_key")) throw new Error("INVALID_API_KEY");
+    const errText = err.toString().toLowerCase();
+    if (errText.includes("429") || errText.includes("limit") || errText.includes("quota")) {
+      throw new Error("RATE_LIMIT_REACHED");
+    }
+    if (errText.includes("api_key") || errText.includes("unauthorized")) {
+      throw new Error("INVALID_API_KEY");
+    }
     throw err;
   }
 }
