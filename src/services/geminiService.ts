@@ -49,8 +49,9 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
   `;
 
   try {
+    // Fix: Select gemini-3-pro-preview for complex reasoning tasks (training plan generation)
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
         systemInstruction,

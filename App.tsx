@@ -1,12 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
 import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
 import Loader from './components/Loader.tsx';
 import LegalView from './components/LegalView.tsx';
+import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
+import { auth } from './firebase.ts';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -22,6 +25,19 @@ const App: React.FC = () => {
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  useEffect(() => {
+    // Nur abonnieren, wenn auth existiert
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+      });
+      return () => unsubscribe();
+    }
+  }, []);
 
   const handleStart = () => {
     setError(null);
@@ -66,6 +82,13 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const handleLogout = () => auth && signOut(auth);
+
+  const openAuth = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
       <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
@@ -74,11 +97,40 @@ const App: React.FC = () => {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
               <i className="fas fa-bolt text-slate-950 text-sm"></i>
             </div>
-            <span className="font-extrabold text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
+            <span className="font-extrabold text-lg sm:text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
-          <button className="px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold hover:bg-emerald-400 transition-all">
-            Login
-          </button>
+          
+          <div className="flex items-center gap-2 sm:gap-3">
+            {!user ? (
+              <>
+                <button 
+                  onClick={() => openAuth('register')}
+                  className="px-3 sm:px-4 py-2 border border-white/10 text-white rounded-lg text-[10px] sm:text-sm font-bold hover:bg-white/5 transition-all"
+                >
+                  Registrieren
+                </button>
+                <button 
+                  onClick={() => openAuth('login')}
+                  className="px-4 sm:px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-[10px] sm:text-sm font-bold hover:bg-emerald-400 transition-all"
+                >
+                  Login
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt als</span>
+                  <span className="text-xs font-bold text-slate-300">{user.displayName}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-[10px] sm:text-xs font-bold hover:text-red-400 hover:border-red-400/30 transition-all"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -138,6 +190,12 @@ const App: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialMode={authMode} 
+      />
     </div>
   );
 };
