@@ -30,7 +30,6 @@ const App: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    // Nur abonnieren, wenn auth existiert
     if (auth) {
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);

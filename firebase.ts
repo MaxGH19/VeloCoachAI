@@ -12,20 +12,26 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-// Prüfen, ob ein gültiger API-Key vorhanden ist
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined' && firebaseConfig.apiKey !== '';
+// Validierung: Wenn der Key 'undefined' oder leer ist, wurde er nicht korrekt injiziert
+const isConfigValid = !!firebaseConfig.apiKey && 
+                     firebaseConfig.apiKey !== 'undefined' && 
+                     firebaseConfig.apiKey !== '';
 
 let app;
-if (!getApps().length) {
-  if (isConfigValid) {
-    app = initializeApp(firebaseConfig);
+try {
+  if (!getApps().length) {
+    if (isConfigValid) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      console.warn("VeloCoach AI: Firebase API Key ist nicht konfiguriert. Auth deaktiviert.");
+      app = null;
+    }
   } else {
-    console.warn("Firebase: API Key fehlt oder ist ungültig. Auth-Funktionen werden deaktiviert.");
-    // Dummy-Initialisierung verhindern oder minimales Mock-Objekt bereitstellen
-    app = null; 
+    app = getApp();
   }
-} else {
-  app = getApp();
+} catch (e) {
+  console.error("Firebase Init Error:", e);
+  app = null;
 }
 
 export const auth = app ? getAuth(app) : null;
@@ -34,14 +40,20 @@ const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {
   if (!auth) {
-    alert("Login zurzeit nicht möglich: Firebase ist nicht korrekt konfiguriert. Bitte prüfe deine Umgebungsvariablen (VITE_FIREBASE_API_KEY etc.).");
+    alert("Konfigurationsfehler: Bitte überprüfe deine Firebase-Umgebungsvariablen in Netlify (VITE_FIREBASE_API_KEY etc.).");
     return;
   }
   try {
     const result = await signInWithPopup(auth, provider);
-    console.log("Eingeloggt als:", result.user.displayName);
-  } catch (error) {
+    return result.user;
+  } catch (error: any) {
     console.error("Login Fehler:", error);
+    if (error.code === 'auth/invalid-api-key') {
+      alert("Fehler: Der angegebene Firebase API-Key ist ungültig.");
+    } else {
+      alert("Fehler beim Login: " + error.message);
+    }
+    throw error;
   }
 };
 
