@@ -9,9 +9,8 @@ import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
-// Fix: Separating type and value imports for better module resolution compatibility
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+// Combined named imports from firebase/auth for compatibility with modular SDK
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -54,7 +53,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (auth) {
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
+        setUser(currentUser as User | null);
       });
       return () => unsubscribe();
     }

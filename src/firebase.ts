@@ -1,5 +1,4 @@
 
-// Use modular named imports for Firebase v9+
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -19,42 +18,31 @@ const isConfigValid = !!firebaseConfig.apiKey &&
 
 let app: any;
 try {
-  // Named functions are exported directly from firebase/app
   const appsList = getApps();
   if (!appsList.length) {
     if (isConfigValid) {
       app = initializeApp(firebaseConfig);
     } else {
-      console.warn("VeloCoach AI: Firebase API Key ist nicht konfiguriert. Auth deaktiviert.");
       app = null;
     }
   } else {
     app = getApp();
   }
 } catch (e) {
-  console.error("Firebase Init Error:", e);
   app = null;
 }
 
-// Safely export auth and db if app is initialized
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 
 export const loginWithGoogle = async () => {
-  if (!auth) {
-    throw new Error("Firebase Auth ist nicht initialisiert.");
-  }
-
-  // Use modular constructor for GoogleAuthProvider
+  if (!auth) throw new Error("Authentifizierungs-Dienst nicht verfügbar.");
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-
   try {
-    // Use modular signInWithPopup from firebase/auth
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error: any) {
-    console.error("Login Fehler:", error);
     if (error.code === 'auth/popup-blocked') {
       throw new Error("Das Login-Fenster wurde blockiert. Bitte erlaube Popups.");
     }

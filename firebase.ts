@@ -1,5 +1,4 @@
 
-// Use modular named imports for Firebase v9+
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -19,13 +18,12 @@ const isConfigValid = !!firebaseConfig.apiKey &&
 
 let app: any;
 try {
-  // Named functions are exported directly from firebase/app
   const appsList = getApps();
   if (!appsList.length) {
     if (isConfigValid) {
       app = initializeApp(firebaseConfig);
     } else {
-      console.warn("VeloCoach AI: Firebase API Key ist nicht konfiguriert. Auth deaktiviert.");
+      console.warn("VeloCoach AI: Firebase API Key nicht konfiguriert.");
       app = null;
     }
   } else {
@@ -36,29 +34,34 @@ try {
   app = null;
 }
 
-// Safely export auth and db if app is initialized
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 
+/**
+ * Öffnet den Google Login in einem Popup-Fenster auf der gleichen Seite.
+ */
 export const loginWithGoogle = async () => {
   if (!auth) {
-    throw new Error("Firebase Auth ist nicht initialisiert.");
+    throw new Error("Authentifizierungs-Dienst nicht verfügbar.");
   }
 
-  // Use modular constructor for GoogleAuthProvider
   const provider = new GoogleAuthProvider();
+  // Erzwingt die Kontoauswahl im Popup
   provider.setCustomParameters({ prompt: 'select_account' });
 
   try {
-    // Use modular signInWithPopup from firebase/auth
+    // signInWithPopup öffnet ein modales Fenster über der App
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error: any) {
     console.error("Login Fehler:", error);
     if (error.code === 'auth/popup-blocked') {
-      throw new Error("Das Login-Fenster wurde blockiert. Bitte erlaube Popups.");
+      throw new Error("Das Login-Fenster wurde vom Browser blockiert. Bitte erlaube Popups für diese Seite.");
     }
-    throw error;
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error("Login abgebrochen. Das Fenster wurde geschlossen.");
+    }
+    throw new Error("Fehler beim Google-Login. Bitte versuche es erneut.");
   }
 };
 
