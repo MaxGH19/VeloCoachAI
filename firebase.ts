@@ -1,6 +1,6 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupBlockedHandler } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -12,7 +12,6 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-// Validierung: Wenn der Key 'undefined' oder leer ist, wurde er nicht korrekt injiziert
 const isConfigValid = !!firebaseConfig.apiKey && 
                      firebaseConfig.apiKey !== 'undefined' && 
                      firebaseConfig.apiKey !== '';
@@ -36,23 +35,34 @@ try {
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {
   if (!auth) {
-    alert("Konfigurationsfehler: Bitte überprüfe deine Firebase-Umgebungsvariablen in Netlify (VITE_FIREBASE_API_KEY etc.).");
-    return;
+    throw new Error("Firebase Auth ist nicht initialisiert. Bitte prüfe die Umgebungsvariablen.");
   }
+
+  const provider = new GoogleAuthProvider();
+  // Erzwingt die Kontoauswahl, was oft hilft, Popup-Probleme zu umgehen
+  provider.setCustomParameters({ prompt: 'select_account' });
+
   try {
+    console.log("Versuche Google Login mit Popup...");
     const result = await signInWithPopup(auth, provider);
+    console.log("Login erfolgreich:", result.user.displayName);
     return result.user;
   } catch (error: any) {
-    console.error("Login Fehler:", error);
-    if (error.code === 'auth/invalid-api-key') {
-      alert("Fehler: Der angegebene Firebase API-Key ist ungültig.");
-    } else {
-      alert("Fehler beim Login: " + error.message);
+    console.error("Detaillierter Login Fehler:", error);
+    
+    if (error.code === 'auth/popup-blocked') {
+      throw new Error("Das Login-Fenster wurde von deinem Browser blockiert. Bitte erlaube Popups für diese Seite.");
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      throw new Error("Der Login-Vorgang wurde abgebrochen.");
+    } else if (error.code === 'auth/operation-not-allowed') {
+      throw new Error("Google Login ist in der Firebase Console noch nicht aktiviert.");
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error(`Diese Domain (${window.location.hostname}) ist nicht für Firebase Auth autorisiert. Bitte trage sie in der Firebase Console nach.`);
     }
+    
     throw error;
   }
 };

@@ -101,20 +101,12 @@ const App: React.FC = () => {
           
           <div className="flex items-center gap-2 sm:gap-3">
             {!user ? (
-              <>
-                <button 
-                  onClick={() => openAuth('register')}
-                  className="px-3 sm:px-4 py-2 border border-white/10 text-white rounded-lg text-[10px] sm:text-sm font-bold hover:bg-white/5 transition-all"
-                >
-                  Registrieren
-                </button>
-                <button 
-                  onClick={() => openAuth('login')}
-                  className="px-4 sm:px-5 py-2 bg-emerald-500 text-slate-950 rounded-lg text-[10px] sm:text-sm font-bold hover:bg-emerald-400 transition-all"
-                >
-                  Login
-                </button>
-              </>
+              <button 
+                onClick={() => openAuth('login')}
+                className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
+              >
+                Login
+              </button>
             ) : (
               <div className="flex items-center gap-4">
                 <div className="hidden sm:flex flex-col items-end">
