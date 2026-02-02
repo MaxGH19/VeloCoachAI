@@ -10,7 +10,9 @@ import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
 // Combined named imports from firebase/auth for compatibility with modular SDK
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+// Separated type import from value imports to fix module export errors
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -125,11 +127,30 @@ const App: React.FC = () => {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center"><i className="fas fa-bolt text-slate-950 text-sm"></i></div>
             <span className="font-extrabold text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
-          {user ? (
-            <button onClick={handleLogout} className="px-4 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-xs font-bold hover:text-red-400 transition-all">Logout</button>
-          ) : (
-            <button onClick={() => setIsAuthModalOpen(true)} className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20">Login</button>
-          )}
+          
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt als</span>
+                  <span className="text-xs font-bold text-slate-300">{user.displayName || 'Athlet'}</span>
+                </div>
+                <button 
+                  onClick={handleLogout} 
+                  className="px-4 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-xs font-bold hover:text-red-400 hover:border-red-400/30 transition-all"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthModalOpen(true)} 
+                className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </nav>
 

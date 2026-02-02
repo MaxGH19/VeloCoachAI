@@ -10,7 +10,9 @@ import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
 // Combined named imports from firebase/auth for compatibility with modular SDK
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+// Separated type import from value imports to fix module export errors
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -147,7 +149,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt als</span>
-                  <span className="text-xs font-bold text-slate-300">{user.displayName}</span>
+                  <span className="text-xs font-bold text-slate-300">{user.displayName || 'Athlet'}</span>
                 </div>
                 <button 
                   onClick={handleLogout}
