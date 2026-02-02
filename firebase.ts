@@ -1,8 +1,10 @@
-
 // Use modular named imports for Firebase v9+
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import * as FirebaseApp from 'firebase/app';
+import * as FirebaseAuth from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+
+const { initializeApp, getApps, getApp } = FirebaseApp;
+const { getAuth, GoogleAuthProvider, signInWithPopup } = FirebaseAuth;
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY,
@@ -19,8 +21,9 @@ const isConfigValid = !!firebaseConfig.apiKey &&
 
 let app: any;
 try {
-  // Fix: Use named functions getApps and initializeApp from firebase/app
-  if (!getApps().length) {
+  // Fix: Ensure named functions are available from the module via namespace destructuring
+  const appsList = getApps();
+  if (!appsList.length) {
     if (isConfigValid) {
       app = initializeApp(firebaseConfig);
     } else {
@@ -35,7 +38,7 @@ try {
   app = null;
 }
 
-// Fix: Use modular getAuth and getFirestore functions
+// Fix: Safely export auth and db if app is initialized
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 
@@ -44,12 +47,12 @@ export const loginWithGoogle = async () => {
     throw new Error("Firebase Auth ist nicht initialisiert.");
   }
 
-  // Fix: Use named GoogleAuthProvider from firebase/auth
+  // Fix: Ensure modular constructor is used
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
   try {
-    // Fix: Use modular signInWithPopup from firebase/auth
+    // Fix: Ensure modular login function is used
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error: any) {

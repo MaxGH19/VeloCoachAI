@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
@@ -9,8 +8,11 @@ import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
-// Fix: Use named imports from firebase/auth instead of namespaced import to resolve resolution errors
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+// Fix: Use namespace import to resolve member export issues with Firebase modular SDK in this environment
+import * as FirebaseAuth from 'firebase/auth';
+
+const { onAuthStateChanged, signOut } = FirebaseAuth;
+type User = FirebaseAuth.User;
 
 enum AppState {
   LANDING,
@@ -27,12 +29,11 @@ const App: React.FC = () => {
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
-  // Fix: Use User type directly from named import
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // Gatekeeper Logic
+  // Strict Gatekeeper Logic for src/App.tsx
   useEffect(() => {
     const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
     const urlParams = new URLSearchParams(window.location.search);
@@ -42,7 +43,6 @@ const App: React.FC = () => {
     if (accessKey === SECRET_PW || isAlreadyAuth) {
       setHasAccess(true);
       localStorage.setItem('app_access_granted', 'true');
-      
       if (accessKey) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -51,9 +51,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (auth) {
-      // Fix: Use named onAuthStateChanged function
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
+        setUser(currentUser as User | null);
       });
       return () => unsubscribe();
     }
@@ -76,10 +75,8 @@ const App: React.FC = () => {
       setState(AppState.DISPLAY);
     } catch (err: any) {
       console.error("Plan Error:", err);
-      
       let message = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.";
       let isRateLimit = false;
-
       const errStr = err.message || "";
       if (errStr.includes("RATE_LIMIT_REACHED")) {
         message = "Der KI-Coach ist gerade überlastet (Limit erreicht). Bitte warte kurz und versuche es erneut.";
@@ -89,7 +86,6 @@ const App: React.FC = () => {
       } else if (errStr.includes("EMPTY_RESPONSE")) {
         message = "Der KI-Coach hat keine Daten geliefert. Bitte versuche es noch einmal.";
       }
-
       setError({ message, isRateLimit });
       setState(AppState.QUESTIONNAIRE);
     }
@@ -102,7 +98,6 @@ const App: React.FC = () => {
     setError(null);
   };
 
-  // Fix: Use named signOut function
   const handleLogout = () => auth && signOut(auth);
 
   const openAuth = (mode: 'login' | 'register') => {
@@ -110,7 +105,6 @@ const App: React.FC = () => {
     setIsAuthModalOpen(true);
   };
 
-  // Render Access Denied Screen
   if (!hasAccess) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
@@ -173,9 +167,6 @@ const App: React.FC = () => {
         {error && (
           <div className="max-w-xl mx-auto mt-6 px-4 w-full z-50">
             <div className={`p-4 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-red-500/10 border-red-500/30 text-red-500'} border rounded-2xl flex items-start gap-4 shadow-2xl backdrop-blur-xl animate-fade-in`}>
-              <div className={`w-10 h-10 rounded-full ${error.isRateLimit ? 'bg-amber-500/10' : 'bg-red-500/10'} flex items-center justify-center shrink-0 mt-0.5`}>
-                <i className={`fas ${error.isRateLimit ? 'fa-hourglass-half' : 'fa-exclamation-triangle'}`}></i>
-              </div>
               <div className="flex-grow">
                 <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit Erreicht' : 'Systemfehler'}</p>
                 <p className="text-sm font-bold leading-relaxed">{error.message}</p>
@@ -220,7 +211,7 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-[10px] font-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
+              <div className="text-slate-600 text-point-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
             </div>
           </div>
         </div>
