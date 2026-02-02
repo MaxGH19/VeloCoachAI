@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
@@ -8,11 +9,9 @@ import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
-// Fix: Use namespace import to resolve member export issues with Firebase modular SDK in this environment
-import * as FirebaseAuth from 'firebase/auth';
-
-const { onAuthStateChanged, signOut } = FirebaseAuth;
-type User = FirebaseAuth.User;
+// Fix: Separating type and value imports for better module resolution compatibility
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -52,7 +51,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (auth) {
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser as User | null);
+        setUser(currentUser);
       });
       return () => unsubscribe();
     }
@@ -211,7 +210,7 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-point-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
             </div>
           </div>
         </div>

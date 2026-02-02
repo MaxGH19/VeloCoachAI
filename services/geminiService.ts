@@ -1,7 +1,43 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
+const DAILY_LIMIT = 100;
+
+/**
+ * Tracks and enforces a local daily limit of 100 plan generations.
+ */
+function checkAndIncrementUsage(): { allowed: boolean; count: number } {
+  const today = new Date().toISOString().split('T')[0];
+  const storageKey = 'velocoach_daily_usage';
+  
+  const stored = localStorage.getItem(storageKey);
+  let stats = stored ? JSON.parse(stored) : { date: today, count: 0 };
+
+  // Reset if it's a new day
+  if (stats.date !== today) {
+    stats = { date: today, count: 0 };
+  }
+
+  if (stats.count >= DAILY_LIMIT) {
+    return { allowed: false, count: stats.count };
+  }
+
+  // We increment only after checking. 
+  // Note: In a real app we'd increment AFTER success, but for this demo 
+  // we count the attempt to ensure strict usage tracking.
+  stats.count += 1;
+  localStorage.setItem(storageKey, JSON.stringify(stats));
+  
+  return { allowed: true, count: stats.count };
+}
+
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
+  // 1. Check local 100-plan-per-day limit
+  const quota = checkAndIncrementUsage();
+  if (!quota.allowed) {
+    throw new Error("LOCAL_DAILY_LIMIT_REACHED");
+  }
+
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const preferenceInstruction = profile.trainingPreference === 'weekday-indoor' 
@@ -13,38 +49,21 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     : '';
 
   const systemInstruction = `
-    Du bist ein erfahrener Radsport-Cheftrainer mit Expertise in Sportwissenschaft und Leistungsdiagnostik. 
-    Deine Aufgabe ist es, hochgradig personalisierte 4-Wochen-Trainingspläne im JSON-Format zu erstellen.
-
-    Befolge strikt diese wissenschaftlichen Prinzipien:
-    1. PERIODISIERUNG: 3:1 Rhythmus (Woche 1-3 Steigerung, Woche 4 Entlastung/Regeneration um -40% TSS gegenüber Woche 3).
-    2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
-    3. INTENSITÄTSZONEN (Puls-basiert): Z1 (<60% MaxHR), Z2 (60-70%), Z3 (70-80%), Z4 (80-90%), Z5 (90-100%).
-    4. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten.
-    5. LEISTUNGSWERTE & INTERVALLE (ESSENTIELL): 
-       Das Feld 'intervals' darf NIEMALS nur die Zone (z.B. 'Z2') enthalten. Es muss IMMER konkrete Zielwerte enthalten:
-       - WENN FTP vorhanden (${profile.ftp || 'nicht bekannt'}): Nutze NUR WATT-Bereiche. Beispiel: '4x8 Min @ 220-240W (Z4), 4 Min Pause @ 130W (Z1)'.
-       - WENN KEIN FTP, aber Max-Puls vorhanden (${profile.maxHeartRate || 'nicht bekannt'}): Nutze NUR BPM-Bereiche. Beispiel: '4x8 Min @ 155-165 bpm (Z4), 4 Min Pause @ 115 bpm (Z1)'.
-       - Berechne die Werte mathematisch präzise basierend auf den oben genannten Prozenten.
-    6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender || 'männlich'} für die Intensitätsberechnung.
-    7. ${preferenceInstruction}
-    8. SPRACHE: Deutsch.
-    9. WOCHEN-FOKUS: Das Feld 'focus' pro Woche MUSS extrem kurz sein (maximal 1-2 Begriffe, z.B. 'Grundlage', 'Sweet Spot', 'Peak', 'Tapering').
+    Du bist ein erfahrener Radsport-Cheftrainer. Erstelle einen 4-Wochen-Trainingsplan im JSON-Format.
+    Wissenschaftliche Prinzipien: 3:1 Periodisierung (Woche 4 ist Recovery).
+    Nutze Watt-Bereiche wenn FTP (${profile.ftp}) vorhanden, sonst Puls-Bereiche (${profile.maxHeartRate}).
+    Sprache: Deutsch.
   `;
 
   const prompt = `
-    Erstelle einen 4-Wochen-Radtrainingsplan für diesen Athleten:
+    Erstelle einen 4-Wochen-Radtrainingsplan:
     - Ziel: ${profile.goal}
-    - Aktuelles Level: ${profile.level}
-    - Verfügbarkeit: ${profile.weeklyHours} Stunden/Woche
-    - Trainingstage: ${profile.availableDays.join(', ')}
-    - Ausrüstung: ${profile.equipment.join(', ')}
-    - Profil: ${profile.gender}, ${profile.age} Jahre, ${profile.weight}kg
-    ${profile.ftp ? `- FTP: ${profile.ftp} Watt` : ''}
-    ${profile.maxHeartRate ? `- Maximalpuls: ${profile.maxHeartRate} bpm` : ''}
+    - Level: ${profile.level}
+    - Zeit: ${profile.weeklyHours}h/Woche
+    - Tage: ${profile.availableDays.join(', ')}
+    - Profil: ${profile.age} Jahre, ${profile.weight}kg, ${profile.gender}
+    ${profile.ftp ? `- FTP: ${profile.ftp}W` : ''}
     ${profile.trainingPreference ? `- Präferenz: ${profile.trainingPreference}` : ''}
-
-    Antworte im validen JSON-Format. Stelle sicher, dass 'intervals' alle nötigen Watt- oder Puls-Vorgaben enthält.
   `;
 
   try {
@@ -105,13 +124,13 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
     console.error("Gemini API Error:", err);
-    const errText = err.toString().toLowerCase();
-    if (errText.includes("429") || errText.includes("limit") || errText.includes("quota")) {
-      throw new Error("RATE_LIMIT_REACHED");
+    const errStr = err.toString().toLowerCase();
+    
+    // Distinguish between actual provider limits (RPM) and other errors
+    if (errStr.includes("429") || errStr.includes("quota") || errStr.includes("limit")) {
+      throw new Error("PROVIDER_RATE_LIMIT");
     }
-    if (errText.includes("api_key") || errText.includes("unauthorized")) {
-      throw new Error("INVALID_API_KEY");
-    }
+    
     throw err;
   }
 }
