@@ -1,10 +1,11 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
-const DAILY_LIMIT = 100;
+const DAILY_LIMIT = 500;
 
 /**
- * Tracks and enforces a local daily limit of 100 plan generations.
+ * Tracks and enforces a local daily limit of plan generations.
  */
 function checkAndIncrementUsage(): { allowed: boolean; count: number } {
   const today = new Date().toISOString().split('T')[0];
@@ -22,9 +23,6 @@ function checkAndIncrementUsage(): { allowed: boolean; count: number } {
     return { allowed: false, count: stats.count };
   }
 
-  // We increment only after checking. 
-  // Note: In a real app we'd increment AFTER success, but for this demo 
-  // we count the attempt to ensure strict usage tracking.
   stats.count += 1;
   localStorage.setItem(storageKey, JSON.stringify(stats));
   
@@ -32,7 +30,7 @@ function checkAndIncrementUsage(): { allowed: boolean; count: number } {
 }
 
 export async function generateTrainingPlan(profile: UserProfile): Promise<FullTrainingPlan> {
-  // 1. Check local 100-plan-per-day limit
+  // 1. Check local daily limit
   const quota = checkAndIncrementUsage();
   if (!quota.allowed) {
     throw new Error("LOCAL_DAILY_LIMIT_REACHED");
@@ -68,7 +66,7 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         systemInstruction,
@@ -126,7 +124,6 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
     console.error("Gemini API Error:", err);
     const errStr = err.toString().toLowerCase();
     
-    // Distinguish between actual provider limits (RPM) and other errors
     if (errStr.includes("429") || errStr.includes("quota") || errStr.includes("limit")) {
       throw new Error("PROVIDER_RATE_LIMIT");
     }

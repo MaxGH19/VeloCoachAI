@@ -9,8 +9,6 @@ import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
 import { auth } from './firebase';
-// Combined named imports from firebase/auth for compatibility with modular SDK
-// Separated type import from value imports to fix module export errors
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 
@@ -24,7 +22,6 @@ enum AppState {
 }
 
 const App: React.FC = () => {
-  const [hasAccess, setHasAccess] = useState(false);
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -32,22 +29,6 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-
-  // Strict Gatekeeper Logic for src/App.tsx
-  useEffect(() => {
-    const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessKey = urlParams.get('key');
-    const SECRET_PW = 'max-testet-1909';
-
-    if (accessKey === SECRET_PW || isAlreadyAuth) {
-      setHasAccess(true);
-      localStorage.setItem('app_access_granted', 'true');
-      if (accessKey) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (auth) {
@@ -78,14 +59,19 @@ const App: React.FC = () => {
       let message = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.";
       let isRateLimit = false;
       const errStr = err.message || "";
-      if (errStr.includes("RATE_LIMIT_REACHED")) {
-        message = "Der KI-Coach ist gerade überlastet (Limit erreicht). Bitte warte kurz und versuche es erneut.";
+      
+      if (errStr === "LOCAL_DAILY_LIMIT_REACHED") {
+        message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
+        isRateLimit = true;
+      } else if (errStr.includes("PROVIDER_RATE_LIMIT") || errStr.includes("RATE_LIMIT")) {
+        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und versuche es gleich noch einmal.";
         isRateLimit = true;
       } else if (errStr.includes("INVALID_API_KEY")) {
         message = "Konfigurationsfehler: Der API-Schlüssel ist ungültig oder fehlt.";
       } else if (errStr.includes("EMPTY_RESPONSE")) {
         message = "Der KI-Coach hat keine Daten geliefert. Bitte versuche es noch einmal.";
       }
+      
       setError({ message, isRateLimit });
       setState(AppState.QUESTIONNAIRE);
     }
@@ -104,27 +90,6 @@ const App: React.FC = () => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
-
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-pulse">
-          <i className="fas fa-lock text-slate-950 text-2xl"></i>
-        </div>
-        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">
-          VELOCOACH.<span className="text-emerald-500">AI</span>
-        </h1>
-        <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-[10px] mb-8">
-          Private Beta Access Only
-        </p>
-        <div className="max-w-xs p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
-          <p className="text-slate-400 text-sm font-medium leading-relaxed">
-            Diese Anwendung ist derzeit nur für autorisierte Tester zugänglich.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
