@@ -1,7 +1,8 @@
 
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// Use modular named imports for Firebase v9+
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY,
@@ -12,34 +13,51 @@ const firebaseConfig = {
   appId: process.env.VITE_FIREBASE_APP_ID
 };
 
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined' && firebaseConfig.apiKey !== '';
+const isConfigValid = !!firebaseConfig.apiKey && 
+                     firebaseConfig.apiKey !== 'undefined' && 
+                     firebaseConfig.apiKey !== '';
 
-let app;
-if (!getApps().length) {
-  if (isConfigValid) {
-    app = initializeApp(firebaseConfig);
+let app: any;
+try {
+  // Fix: Use named functions getApps and initializeApp from firebase/app
+  if (!getApps().length) {
+    if (isConfigValid) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      console.warn("VeloCoach AI: Firebase API Key ist nicht konfiguriert. Auth deaktiviert.");
+      app = null;
+    }
   } else {
-    console.warn("Firebase: API Key fehlt oder ist ungültig. Auth-Funktionen werden deaktiviert.");
-    app = null; 
+    app = getApp();
   }
-} else {
-  app = getApp();
+} catch (e) {
+  console.error("Firebase Init Error:", e);
+  app = null;
 }
 
+// Fix: Use modular getAuth and getFirestore functions
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {
   if (!auth) {
-    alert("Login zurzeit nicht möglich: Firebase Konfiguration fehlt.");
-    return;
+    throw new Error("Firebase Auth ist nicht initialisiert.");
   }
+
+  // Fix: Use named GoogleAuthProvider from firebase/auth
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+
   try {
+    // Fix: Use modular signInWithPopup from firebase/auth
     const result = await signInWithPopup(auth, provider);
-    console.log("Eingeloggt als:", result.user.displayName);
-  } catch (error) {
+    return result.user;
+  } catch (error: any) {
     console.error("Login Fehler:", error);
+    if (error.code === 'auth/popup-blocked') {
+      throw new Error("Das Login-Fenster wurde blockiert. Bitte erlaube Popups.");
+    }
+    throw error;
   }
 };
 

@@ -8,8 +8,9 @@ import LegalView from './components/LegalView.tsx';
 import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
-import { auth } from './firebase.ts';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { auth } from './firebase';
+// Fix: Use named imports from firebase/auth instead of namespaced import to resolve resolution errors
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -25,12 +26,14 @@ const App: React.FC = () => {
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
+  // Fix: Use User type directly from named import
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     if (auth) {
+      // Fix: Use named onAuthStateChanged function
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);
       });
@@ -81,6 +84,7 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  // Fix: Use named signOut function
   const handleLogout = () => auth && signOut(auth);
 
   const openAuth = (mode: 'login' | 'register') => {

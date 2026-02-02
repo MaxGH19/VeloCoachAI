@@ -1,4 +1,3 @@
-
 import { TrainingGoal, FitnessLevel, Equipment, Gender, TrainingPreference } from './types.ts';
 
 export const GOAL_OPTIONS: { value: TrainingGoal; label: string; icon: string }[] = [

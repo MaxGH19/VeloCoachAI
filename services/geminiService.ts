@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, FullTrainingPlan } from "../types.ts";
 
@@ -49,7 +48,6 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
   `;
 
   try {
-    // Fix: Select gemini-3-pro-preview for complex reasoning tasks (training plan generation)
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: prompt,
@@ -104,7 +102,6 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
     const text = response.text;
     if (!text) throw new Error("EMPTY_RESPONSE");
-    
     return JSON.parse(text) as FullTrainingPlan;
   } catch (err: any) {
     console.error("Gemini API Error:", err);

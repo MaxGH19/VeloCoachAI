@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FullTrainingPlan, TrainingSession, UserProfile } from '../types.ts';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';

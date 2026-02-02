@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { loginWithGoogle } from '../firebase.ts';
 
@@ -10,28 +9,41 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sync mode if initialMode changes while open
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
-      console.log(`Modal rendered with mode: ${initialMode}`);
+      setError(null);
+      setIsLoading(false);
     }
   }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      await loginWithGoogle();
+      onClose();
+    } catch (err: any) {
+      console.error("AuthModal Login Error:", err);
+      setError(err.message || "Ein Fehler ist beim Login aufgetreten.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-950/90 backdrop-blur-md transition-opacity duration-300"
         onClick={onClose}
       ></div>
 
-      {/* Modal Container */}
       <div className="relative w-full max-w-md glass rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden animate-fade-in pointer-events-auto">
-        {/* Close Button */}
         <button 
           onClick={onClose}
           className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors z-20"
@@ -65,18 +77,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode }) =
                 : 'Erstelle ein Konto, um deinen Fortschritt zu speichern.'}
             </p>
 
+            {error && (
+              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-xs font-bold animate-fade-in">
+                <i className="fas fa-exclamation-circle mr-2"></i>
+                {error}
+              </div>
+            )}
+
             <div className="space-y-4">
-              {/* Social Login */}
               <button 
-                onClick={async () => {
-                  console.log("Starting Google Login...");
-                  await loginWithGoogle();
-                  onClose();
-                }}
-                className="w-full py-4 bg-white text-slate-950 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-slate-200 transition-all active:scale-[0.98]"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className={`w-full py-4 bg-white text-slate-950 rounded-xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${isLoading ? 'opacity-50 cursor-wait' : 'hover:bg-slate-200'}`}
               >
-                <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-                Mit Google anmelden
+                {isLoading ? (
+                  <i className="fas fa-circle-notch animate-spin"></i>
+                ) : (
+                  <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
+                )}
+                {isLoading ? 'Verbindung wird hergestellt...' : 'Mit Google anmelden'}
               </button>
 
               <div className="flex items-center gap-4 py-2">
@@ -85,38 +104,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode }) =
                 <div className="h-px flex-grow bg-white/5"></div>
               </div>
 
-              {/* Email Form (Placeholder/Funktionslos) */}
-              <div className="space-y-3">
+              <div className="space-y-3 opacity-50">
                 <div className="space-y-1 text-left">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Adresse</label>
                   <input 
+                    disabled
                     type="email" 
                     placeholder="name@beispiel.de"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none transition-colors text-white cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-1 text-left">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Passwort</label>
                   <input 
+                    disabled
                     type="password" 
                     placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none transition-colors text-white cursor-not-allowed"
                   />
                 </div>
-                {mode === 'register' && (
-                  <div className="space-y-1 text-left">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Passwort bestätigen</label>
-                    <input 
-                      type="password" 
-                      placeholder="••••••••"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors text-white"
-                    />
-                  </div>
-                )}
               </div>
 
               <button 
-                className="w-full py-4 bg-white/5 border border-white/10 text-slate-300 rounded-xl font-bold hover:bg-white/10 transition-all cursor-not-allowed mt-4"
+                className="w-full py-4 bg-white/5 border border-white/10 text-slate-300 rounded-xl font-bold transition-all cursor-not-allowed mt-4"
                 disabled
               >
                 {mode === 'login' ? 'Einloggen' : 'Konto erstellen'}

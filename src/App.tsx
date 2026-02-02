@@ -8,8 +8,9 @@ import LegalView from './components/LegalView.tsx';
 import AuthModal from './components/AuthModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
-import { auth } from './firebase.ts';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { auth } from './firebase';
+// Fix: Use named imports from firebase/auth instead of namespaced import to resolve resolution errors
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 enum AppState {
   LANDING,
@@ -21,16 +22,36 @@ enum AppState {
 }
 
 const App: React.FC = () => {
+  const [hasAccess, setHasAccess] = useState(false);
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
+  // Fix: Use User type directly from named import
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
+  // Gatekeeper Logic
+  useEffect(() => {
+    const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessKey = urlParams.get('key');
+    const SECRET_PW = 'max-testet-1909';
+
+    if (accessKey === SECRET_PW || isAlreadyAuth) {
+      setHasAccess(true);
+      localStorage.setItem('app_access_granted', 'true');
+      
+      if (accessKey) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (auth) {
+      // Fix: Use named onAuthStateChanged function
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);
       });
@@ -81,12 +102,35 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  // Fix: Use named signOut function
   const handleLogout = () => auth && signOut(auth);
 
   const openAuth = (mode: 'login' | 'register') => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
+
+  // Render Access Denied Screen
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-pulse">
+          <i className="fas fa-lock text-slate-950 text-2xl"></i>
+        </div>
+        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">
+          VELOCOACH.<span className="text-emerald-500">AI</span>
+        </h1>
+        <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-[10px] mb-8">
+          Private Beta Access Only
+        </p>
+        <div className="max-w-xs p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+          <p className="text-slate-400 text-sm font-medium leading-relaxed">
+            Diese Anwendung ist derzeit nur für autorisierte Tester zugänglich.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">

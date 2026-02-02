@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserProfile, TrainingGoal, FitnessLevel, Equipment, Gender, TrainingPreference } from '../types.ts';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS, GENDER_OPTIONS, PREFERENCE_OPTIONS } from '../constants.ts';
@@ -45,7 +44,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
 
   const totalSteps = shouldShowPreferenceStep() ? 7 : 6;
 
-  // Hours Logic based on Day Count
   const getAllowedHoursRange = (dayCount: number) => {
     switch (dayCount) {
       case 1: return { min: 2, max: 5 };
@@ -55,11 +53,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
       case 5: return { min: 6, max: 20 };
       case 6: return { min: 8, max: 25 };
       case 7: return { min: 10, max: 25 };
-      default: return { min: 2, max: 25 }; // Fallback
+      default: return { min: 2, max: 25 }; 
     }
   };
 
-  // Validation Logic for Metrics
   const getFtpValidation = (val?: number) => {
     if (val === undefined) return null;
     if (val < 40 || val > 600) return { type: 'error', message: "Der Wert ist nicht plausibel. Bitte trage einen Wert zwischen 40 und 600 Watt ein." };
@@ -136,17 +133,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
 
   const handleFinalSubmit = () => {
     const finalProfile = { ...profile };
-    
     if ((metricsKnowledge === 'none' || metricsKnowledge === 'ftp') && profile.age) {
       finalProfile.maxHeartRate = 220 - profile.age;
     }
-
-    if (metricsKnowledge === 'none') {
-      delete finalProfile.ftp;
-    } else if (metricsKnowledge === 'hr') {
+    if (metricsKnowledge === 'none' || metricsKnowledge === 'hr') {
       delete finalProfile.ftp;
     }
-
     onSubmit(finalProfile as UserProfile);
   };
 
@@ -154,16 +146,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     const newDays = profile.availableDays.includes(day)
       ? profile.availableDays.filter(d => d !== day)
       : [...profile.availableDays, day];
-    
     const dayCount = newDays.length;
     let newHours = profile.weeklyHours;
-
     if (dayCount > 0) {
       const { min, max } = getAllowedHoursRange(dayCount);
-      // Auto-adjust hours to ~45-50% of the allowed range
       newHours = Math.floor(min + (max - min) * 0.45);
     }
-
     setProfile(p => ({
       ...p,
       availableDays: newDays,
@@ -182,7 +170,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
 
   const primaryBtnClass = "px-8 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-emerald-400";
   const secondaryBtnClass = "px-8 py-3 bg-white/5 text-slate-300 font-bold rounded-xl hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center border border-white/10";
-  
   const questionClass = "text-slate-200 text-xl md:text-2xl font-semibold italic leading-tight mb-4";
 
   const renderStep = () => {
@@ -196,11 +183,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             </div>
             <div className="grid grid-cols-1 gap-3">
               {GOAL_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setProfile({ ...profile, goal: opt.value })}
-                  className={`p-5 rounded-2xl text-left transition-all border-2 flex items-center gap-4 ${profile.goal === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
-                >
+                <button key={opt.value} onClick={() => setProfile({ ...profile, goal: opt.value })} className={`p-5 rounded-2xl text-left transition-all border-2 flex items-center gap-4 ${profile.goal === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${profile.goal === opt.value ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-500'}`}>
                     <i className={`fas ${opt.icon} text-xl`}></i>
                   </div>
@@ -222,11 +205,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             </div>
             <div className="space-y-3">
               {LEVEL_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setProfile({ ...profile, level: opt.value })}
-                  className={`w-full p-5 rounded-2xl text-left transition-all border-2 ${profile.level === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
-                >
+                <button key={opt.value} onClick={() => setProfile({ ...profile, level: opt.value })} className={`w-full p-5 rounded-2xl text-left transition-all border-2 ${profile.level === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-lg">{opt.label}</span>
                   </div>
@@ -235,12 +214,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               ))}
             </div>
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button onClick={nextStep} className={primaryBtnClass} disabled={!profile.level}>
-                Weiter <i className="fas fa-arrow-right ml-2"></i>
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={nextStep} className={primaryBtnClass} disabled={!profile.level}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>
             </div>
           </div>
         );
@@ -258,139 +233,61 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                 <label className="text-slate-400 text-xs uppercase tracking-wider font-bold">Stunden pro Woche</label>
                 <span className="text-xl font-bold text-emerald-400">{profile.weeklyHours} Stunden</span>
               </div>
-              <input 
-                type="range" 
-                min={min} 
-                max={max} 
-                step="1"
-                disabled={dayCount === 0}
-                value={profile.weeklyHours}
-                onChange={(e) => setProfile({...profile, weeklyHours: parseInt(e.target.value)})}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-20"
-              />
+              <input type="range" min={min} max={max} step="1" disabled={dayCount === 0} value={profile.weeklyHours} onChange={(e) => setProfile({...profile, weeklyHours: parseInt(e.target.value)})} className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-20" />
             </div>
             <div className="space-y-4">
               <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Bevorzugte Tage ({dayCount})</label>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {DAY_OPTIONS.map(day => (
-                  <button
-                    key={day}
-                    onClick={() => toggleDay(day)}
-                    className={`h-12 flex items-center justify-center rounded-xl font-bold transition-all border ${profile.availableDays.includes(day) ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-white/5 border-white/10 text-slate-400'}`}
-                  >
-                    {day}
-                  </button>
+                  <button key={day} onClick={() => toggleDay(day)} className={`h-12 flex items-center justify-center rounded-xl font-bold transition-all border ${profile.availableDays.includes(day) ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-white/5 border-white/10 text-slate-400'}`}>{day}</button>
                 ))}
               </div>
-              {dayCount === 0 && (
-                <p className="text-[11px] text-amber-500 italic font-bold">Bitte wähle mindestens einen Trainingstag aus.</p>
-              )}
+              {dayCount === 0 && <p className="text-[11px] text-amber-500 italic font-bold">Bitte wähle mindestens einen Trainingstag aus.</p>}
             </div>
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button onClick={nextStep} className={primaryBtnClass} disabled={dayCount === 0}>
-                Weiter <i className="fas fa-arrow-right ml-2"></i>
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={nextStep} className={primaryBtnClass} disabled={dayCount === 0}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>
             </div>
           </div>
         );
       case 4:
         const showFtpVal = touched.has('ftp') && !editingFields.has('ftp');
         const showHrVal = touched.has('hr') && !editingFields.has('hr');
-
         return (
           <div className="space-y-8">
             <div className="space-y-2">
               <h2 className="text-2xl md:text-3xl font-bold leading-tight">Kennzahlen</h2>
               <p className={questionClass}>Kennst du deine aktuelle FTP und deinen Maximalpuls?</p>
             </div>
-            
             <div className="grid grid-cols-1 gap-2">
-              {[
-                { id: 'both', label: 'Ich kenne beide Werte' },
-                { id: 'ftp', label: 'Ich kenne nur meine FTP' },
-                { id: 'hr', label: 'Ich kenne nur meinen Maximalpuls' },
-                { id: 'none', label: 'Ich kenne keinen der Werte' }
-              ].map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => {
-                    setMetricsKnowledge(opt.id as MetricsKnowledge);
-                    setTouched(new Set());
-                    setEditingFields(new Set());
-                    setErrors({});
-                  }}
-                  className={`p-4 rounded-xl text-left border-2 transition-all ${metricsKnowledge === opt.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}
-                >
-                  {opt.label}
-                </button>
+              {[{ id: 'both', label: 'Ich kenne beide Werte' }, { id: 'ftp', label: 'Ich kenne nur meine FTP' }, { id: 'hr', label: 'Ich kenne nur meinen Maximalpuls' }, { id: 'none', label: 'Ich kenne keinen der Werte' }].map(opt => (
+                <button key={opt.id} onClick={() => { setMetricsKnowledge(opt.id as MetricsKnowledge); setTouched(new Set()); setEditingFields(new Set()); setErrors({}); }} className={`p-4 rounded-xl text-left border-2 transition-all ${metricsKnowledge === opt.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}>{opt.label}</button>
               ))}
             </div>
-
             <div className="space-y-4 pt-2">
               {(metricsKnowledge === 'both' || metricsKnowledge === 'ftp') && (
                 <div className="space-y-2">
-                  <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">FTP (Funktionelle Leistungsschwelle)</label>
+                  <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">FTP (Watt)</label>
                   <div className="relative">
-                    <input 
-                      type="number" 
-                      value={profile.ftp ?? ''}
-                      onFocus={() => startEditing('ftp')}
-                      onBlur={() => stopEditing('ftp')}
-                      onChange={(e) => {
-                        startEditing('ftp');
-                        setProfile({...profile, ftp: e.target.value ? parseInt(e.target.value) : undefined});
-                      }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showFtpVal && ftpValidation?.type === 'error' ? 'border-red-500' : showFtpVal && ftpValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`}
-                    />
+                    <input type="number" value={profile.ftp ?? ''} onFocus={() => startEditing('ftp')} onBlur={() => stopEditing('ftp')} onChange={(e) => { startEditing('ftp'); setProfile({...profile, ftp: e.target.value ? parseInt(e.target.value) : undefined}); }} className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showFtpVal && ftpValidation?.type === 'error' ? 'border-red-500' : showFtpVal && ftpValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`} />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">Watt</span>
                   </div>
-                  {showFtpVal && ftpValidation && (
-                    <p className={`text-[11px] font-bold italic ${ftpValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
-                      {ftpValidation.message}
-                    </p>
-                  )}
+                  {showFtpVal && ftpValidation && <p className={`text-[11px] font-bold italic ${ftpValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>{ftpValidation.message}</p>}
                 </div>
               )}
-              
               {(metricsKnowledge === 'both' || metricsKnowledge === 'hr') && (
                 <div className="space-y-2">
                   <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Maximalpuls (bpm)</label>
                   <div className="relative">
-                    <input 
-                      type="number" 
-                      value={profile.maxHeartRate ?? ''}
-                      onFocus={() => startEditing('hr')}
-                      onBlur={() => stopEditing('hr')}
-                      onChange={(e) => {
-                        startEditing('hr');
-                        setProfile({...profile, maxHeartRate: e.target.value ? parseInt(e.target.value) : undefined});
-                      }}
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showHrVal && hrValidation?.type === 'error' ? 'border-red-500' : showHrVal && hrValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`}
-                    />
+                    <input type="number" value={profile.maxHeartRate ?? ''} onFocus={() => startEditing('hr')} onBlur={() => stopEditing('hr')} onChange={(e) => { startEditing('hr'); setProfile({...profile, maxHeartRate: e.target.value ? parseInt(e.target.value) : undefined}); }} className={`w-full bg-white/5 border rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors ${showHrVal && hrValidation?.type === 'error' ? 'border-red-500' : showHrVal && hrValidation?.type === 'warning' ? 'border-amber-500/50' : 'border-white/10 focus:border-emerald-500'}`} />
                   </div>
-                  {showHrVal && hrValidation && (
-                    <p className={`text-[11px] font-bold italic ${hrValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
-                      {hrValidation.message}
-                    </p>
-                  )}
+                  {showHrVal && hrValidation && <p className={`text-[11px] font-bold italic ${hrValidation.type === 'error' ? 'text-red-500' : 'text-amber-500'}`}>{hrValidation.message}</p>}
                 </div>
               )}
             </div>
-
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button 
-                onClick={handleStep4Next} 
-                className={primaryBtnClass}
-                disabled={isStep4Blocked()}
-              >
-                Weiter <i className="fas fa-arrow-right ml-2"></i>
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={handleStep4Next} className={primaryBtnClass} disabled={isStep4Blocked()}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>
             </div>
           </div>
         );
@@ -402,54 +299,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               <h2 className="text-2xl md:text-3xl font-bold leading-tight">Details zu dir</h2>
               <p className={questionClass}>Ein paar physiologische Daten für die Feinabstimmung.</p>
             </div>
-            
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Alter</label>
-                <input 
-                  type="number" 
-                  value={profile.age ?? ''}
-                  onChange={(e) => setProfile({...profile, age: e.target.value ? parseInt(e.target.value) : undefined})}
-                  className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Gewicht (kg)</label>
-                <input 
-                  type="number" 
-                  value={profile.weight ?? ''}
-                  onChange={(e) => setProfile({...profile, weight: e.target.value ? parseInt(e.target.value) : undefined})}
-                  className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors"
-                />
-              </div>
+              <div className="space-y-2"><label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Alter</label><input type="number" value={profile.age ?? ''} onChange={(e) => setProfile({...profile, age: e.target.value ? parseInt(e.target.value) : undefined})} className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors" /></div>
+              <div className="space-y-2"><label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Gewicht (kg)</label><input type="number" value={profile.weight ?? ''} onChange={(e) => setProfile({...profile, weight: e.target.value ? parseInt(e.target.value) : undefined})} className="w-full bg-white/5 border border-white/10 focus:border-emerald-500 rounded-xl p-4 text-lg font-bold focus:outline-none transition-colors" /></div>
             </div>
-
             <div className="space-y-4">
               <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold">Geschlecht</label>
               <div className="grid grid-cols-1 gap-2">
                 {GENDER_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setProfile({...profile, gender: opt.value})}
-                    className={`p-4 rounded-xl text-left border-2 transition-all font-bold ${profile.gender === opt.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}
-                  >
-                    {opt.label}
-                  </button>
+                  <button key={opt.value} onClick={() => setProfile({...profile, gender: opt.value})} className={`p-4 rounded-xl text-left border-2 transition-all font-bold ${profile.gender === opt.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}>{opt.label}</button>
                 ))}
               </div>
             </div>
-
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button 
-                onClick={handleStep5Next} 
-                className={primaryBtnClass}
-                disabled={!isStep5Complete}
-              >
-                Weiter <i className="fas fa-arrow-right ml-2"></i>
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={handleStep5Next} className={primaryBtnClass} disabled={!isStep5Complete}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>
             </div>
           </div>
         );
@@ -463,11 +327,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-2">
                 {EQUIPMENT_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => toggleEquipment(opt.value)}
-                    className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.equipment.includes(opt.value) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}
-                  >
+                  <button key={opt.value} onClick={() => toggleEquipment(opt.value)} className={`p-4 rounded-xl text-left border-2 flex items-center justify-between transition-all ${profile.equipment.includes(opt.value) ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/5 bg-white/5 text-slate-400 hover:border-white/10'}`}>
                     <span className="font-bold">{opt.label}</span>
                     <i className={`fas ${profile.equipment.includes(opt.value) ? 'fa-check-circle text-emerald-500' : 'fa-circle text-slate-800'}`}></i>
                   </button>
@@ -475,12 +335,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               </div>
             </div>
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button onClick={handleStep6Next} className={primaryBtnClass}>
-                {shouldShowPreferenceStep() ? 'Weiter' : 'Plan erstellen'}
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={handleStep6Next} className={primaryBtnClass}>{shouldShowPreferenceStep() ? 'Weiter' : 'Plan erstellen'}</button>
             </div>
           </div>
         );
@@ -493,11 +349,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             </div>
             <div className="grid grid-cols-1 gap-3">
               {PREFERENCE_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setProfile({ ...profile, trainingPreference: opt.value })}
-                  className={`p-5 rounded-2xl text-left transition-all border-2 flex items-center gap-4 ${profile.trainingPreference === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
-                >
+                <button key={opt.value} onClick={() => setProfile({ ...profile, trainingPreference: opt.value })} className={`p-5 rounded-2xl text-left transition-all border-2 flex items-center gap-4 ${profile.trainingPreference === opt.value ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${profile.trainingPreference === opt.value ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-500'}`}>
                     <i className={`fas ${opt.icon} text-xl`}></i>
                   </div>
@@ -506,17 +358,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
               ))}
             </div>
             <div className="flex justify-between items-center gap-4 pt-6">
-              <button onClick={prevStep} className={secondaryBtnClass}>
-                <i className="fas fa-arrow-left mr-2"></i> Zurück
-              </button>
-              <button onClick={handleFinalSubmit} className={primaryBtnClass} disabled={!profile.trainingPreference}>
-                Plan erstellen
-              </button>
+              <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
+              <button onClick={handleFinalSubmit} className={primaryBtnClass} disabled={!profile.trainingPreference}>Plan erstellen</button>
             </div>
           </div>
         );
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -524,19 +371,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
     <div className="max-w-xl mx-auto py-6 md:py-12 px-4">
       <div className="mb-6">
         <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-          <div 
-            className="bg-emerald-500 h-full transition-all duration-500 ease-out" 
-            style={{ width: `${(step / totalSteps) * 100}%` }}
-          ></div>
+          <div className="bg-emerald-500 h-full transition-all duration-500 ease-out" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
         </div>
-        <div className="flex justify-between mt-2 px-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Schritt {step} von {totalSteps}</span>
-        </div>
+        <div className="flex justify-between mt-2 px-1"><span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Schritt {step} von {totalSteps}</span></div>
       </div>
-      
-      <div className="glass rounded-3xl p-6 md:p-10 animate-fade-in">
-        {renderStep()}
-      </div>
+      <div className="glass rounded-3xl p-6 md:p-10 animate-fade-in">{renderStep()}</div>
     </div>
   );
 };
