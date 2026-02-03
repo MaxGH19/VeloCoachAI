@@ -30,33 +30,35 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  
+  // Umgebungserkennung
+  const hostname = window.location.hostname;
+  const isPreview = hostname.includes('webcontainer.io') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const appVersion = isPreview ? '1.0.9-PREVIEW-OPEN' : '1.0.9-LIVE-PROTECTED';
 
   useEffect(() => {
-    // Umgebungserkennung zur Sicherheit
-    const hostname = window.location.hostname;
-    const isLocalOrPreview = hostname.includes('localhost') || 
-                            hostname.includes('127.0.0.1') || 
-                            hostname.includes('webcontainer.io');
-
-    if (isLocalOrPreview) {
+    // Wenn Preview-Umgebung -> Sofortiger Zugriff
+    if (isPreview) {
       setHasAccess(true);
-    } else {
-      const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessKey = urlParams.get('key');
-      const SECRET_PW = 'max-testet-1909';
-
-      if (accessKey === SECRET_PW || isAlreadyAuth) {
-        setHasAccess(true);
-        localStorage.setItem('app_access_granted', 'true');
-        if (accessKey) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      } else {
-        setHasAccess(false);
-      }
+      return;
     }
-  }, []);
+
+    // Wenn Live-Umgebung -> Passwort-Logik
+    const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessKey = urlParams.get('key');
+    const SECRET_PW = 'max-testet-1909';
+
+    if (accessKey === SECRET_PW || isAlreadyAuth) {
+      setHasAccess(true);
+      localStorage.setItem('app_access_granted', 'true');
+      if (accessKey) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } else {
+      setHasAccess(false);
+    }
+  }, [isPreview]);
 
   useEffect(() => {
     if (auth) {
@@ -94,10 +96,6 @@ const App: React.FC = () => {
       } else if (errStr.includes("PROVIDER_RATE_LIMIT") || errStr.includes("RATE_LIMIT")) {
         message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
         isRateLimit = true;
-      } else if (errStr.includes("INVALID_API_KEY")) {
-        message = "Konfigurationsfehler: Der API-Schlüssel ist ungültig oder fehlt.";
-      } else if (errStr.includes("EMPTY_RESPONSE")) {
-        message = "Der KI-Coach hat keine Daten geliefert. Bitte versuche es noch einmal.";
       }
       
       setError({ message, isRateLimit });
@@ -119,21 +117,22 @@ const App: React.FC = () => {
     setIsAuthModalOpen(true);
   };
 
+  // Passwort-Sperre (Nur wenn nicht Preview)
   if (!hasAccess) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-pulse">
+        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
           <i className="fas fa-lock text-slate-950 text-2xl"></i>
         </div>
         <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">
           VELOCOACH.<span className="text-emerald-500">AI</span>
         </h1>
         <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-[10px] mb-8">
-          Private Beta Access Only
+          Beta Access Restricted
         </p>
         <div className="max-w-xs p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
           <p className="text-slate-400 text-sm font-medium leading-relaxed">
-            Diese Anwendung ist derzeit nur für autorisierte Tester zugänglich. Bitte nutze den bereitgestellten Beta-Link.
+            Der Zugriff auf die Live-Anwendung ist derzeit nur für autorisierte Tester möglich.
           </p>
         </div>
       </div>
@@ -162,7 +161,7 @@ const App: React.FC = () => {
             ) : (
               <div className="flex items-center gap-4">
                 <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt als</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt</span>
                   <span className="text-xs font-bold text-slate-300">{user.displayName || 'Athlet'}</span>
                 </div>
                 <button 
@@ -182,7 +181,7 @@ const App: React.FC = () => {
           <div className="max-w-xl mx-auto mt-6 px-4 w-full z-50">
             <div className={`p-4 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-red-500/10 border-red-500/30 text-red-500'} border rounded-2xl flex items-start gap-4 shadow-2xl backdrop-blur-xl animate-fade-in`}>
               <div className="flex-grow">
-                <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit Erreicht' : 'Systemfehler'}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit' : 'Fehler'}</p>
                 <p className="text-sm font-bold leading-relaxed">{error.message}</p>
               </div>
               <button onClick={() => setError(null)} className="text-slate-500 hover:text-white transition-colors">
@@ -225,7 +224,7 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.9-LIVE-PROTECTED</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter text-[10px] font-bold">{appVersion}</div>
             </div>
           </div>
         </div>

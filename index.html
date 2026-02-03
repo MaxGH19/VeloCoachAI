@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
   <head>
@@ -45,6 +46,11 @@
   </head>
   <body class="bg-slate-950 text-slate-50">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- 
+      Die Live-Umgebung (Deployment) nutzt src/index.tsx -> src/App.tsx (geschützt).
+      Die Preview-Umgebung in AI Studio nutzt ebenfalls diesen Pfad, erkennt aber den Hostname (webcontainer.io)
+      und schaltet das Passwort automatisch frei.
+    -->
+    <script type="module" src="./src/index.tsx"></script>
   </body>
 </html>

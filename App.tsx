@@ -56,22 +56,11 @@ const App: React.FC = () => {
       setState(AppState.DISPLAY);
     } catch (err: any) {
       console.error("Plan Generation Error:", err);
-      
       let message = "Ein unerwarteter Fehler ist aufgetreten.";
-      let isQuota = false;
-
-      const errStr = err.message || "";
-      if (errStr === "LOCAL_DAILY_LIMIT_REACHED") {
-        message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
-        isQuota = true;
-      } else if (errStr === "PROVIDER_RATE_LIMIT") {
-        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
-        isQuota = false;
-      } else {
-        message = "Fehler bei der Erstellung. Bitte prüfe deine Internetverbindung oder versuche es erneut.";
+      if (err.message === "LOCAL_DAILY_LIMIT_REACHED") {
+        message = "Tageslimit erreicht.";
       }
-
-      setError({ message, isQuota });
+      setError({ message, isQuota: false });
       setState(AppState.QUESTIONNAIRE);
     }
   };
@@ -100,48 +89,17 @@ const App: React.FC = () => {
             </div>
             <span className="font-extrabold text-lg sm:text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
-          
           <div className="flex items-center gap-2 sm:gap-3">
             {!user ? (
-              <button 
-                onClick={() => openAuth('login')}
-                className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
-              >
-                Login
-              </button>
+              <button onClick={() => openAuth('login')} className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-400 transition-all">Login</button>
             ) : (
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt als</span>
-                  <span className="text-xs font-bold text-slate-300">{user.displayName || 'Athlet'}</span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-[10px] sm:text-xs font-bold hover:text-red-400 hover:border-red-400/30 transition-all"
-                >
-                  Logout
-                </button>
-              </div>
+              <button onClick={handleLogout} className="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-[10px] sm:text-xs font-bold">Logout</button>
             )}
           </div>
         </div>
       </nav>
 
-      <main className="flex-grow pt-16 flex flex-col overflow-hidden">
-        {error && (
-          <div className="max-w-xl mx-auto mt-6 px-4 w-full z-50">
-            <div className={`p-4 ${error.isQuota ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-red-500/10 border-red-500/30 text-red-500'} border rounded-2xl flex items-start gap-4 shadow-2xl backdrop-blur-xl animate-fade-in`}>
-              <div className="flex-grow">
-                <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isQuota ? 'Limit erreicht' : 'System-Hinweis'}</p>
-                <p className="text-sm font-bold leading-relaxed">{error.message}</p>
-              </div>
-              <button onClick={() => setError(null)} className="text-slate-500 hover:text-white transition-colors">
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        )}
-
+      <main className="flex-grow pt-16 flex flex-col overflow-hidden relative">
         <div className="flex-grow flex flex-col justify-center relative">
           {state === AppState.LANDING && <Hero onStart={handleStart} />}
           {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />}
@@ -175,17 +133,13 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.9-PREVIEW-OPEN</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter text-[10px] font-bold">VER. 1.0.9-PREVIEW-OPEN</div>
             </div>
           </div>
         </div>
       </footer>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        initialMode={authMode} 
-      />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode={authMode} />
     </div>
   );
 };
