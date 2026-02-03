@@ -22,6 +22,7 @@ enum AppState {
 }
 
 const App: React.FC = () => {
+  const [hasAccess, setHasAccess] = useState(false);
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -29,6 +30,33 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  useEffect(() => {
+    // Umgebungserkennung zur Sicherheit
+    const hostname = window.location.hostname;
+    const isLocalOrPreview = hostname.includes('localhost') || 
+                            hostname.includes('127.0.0.1') || 
+                            hostname.includes('webcontainer.io');
+
+    if (isLocalOrPreview) {
+      setHasAccess(true);
+    } else {
+      const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessKey = urlParams.get('key');
+      const SECRET_PW = 'max-testet-1909';
+
+      if (accessKey === SECRET_PW || isAlreadyAuth) {
+        setHasAccess(true);
+        localStorage.setItem('app_access_granted', 'true');
+        if (accessKey) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else {
+        setHasAccess(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (auth) {
@@ -64,7 +92,7 @@ const App: React.FC = () => {
         message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
         isRateLimit = true;
       } else if (errStr.includes("PROVIDER_RATE_LIMIT") || errStr.includes("RATE_LIMIT")) {
-        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und versuche es gleich noch einmal.";
+        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
         isRateLimit = true;
       } else if (errStr.includes("INVALID_API_KEY")) {
         message = "Konfigurationsfehler: Der API-Schlüssel ist ungültig oder fehlt.";
@@ -90,6 +118,27 @@ const App: React.FC = () => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-pulse">
+          <i className="fas fa-lock text-slate-950 text-2xl"></i>
+        </div>
+        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">
+          VELOCOACH.<span className="text-emerald-500">AI</span>
+        </h1>
+        <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-[10px] mb-8">
+          Private Beta Access Only
+        </p>
+        <div className="max-w-xs p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+          <p className="text-slate-400 text-sm font-medium leading-relaxed">
+            Diese Anwendung ist derzeit nur für autorisierte Tester zugänglich. Bitte nutze den bereitgestellten Beta-Link.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
@@ -176,7 +225,7 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.9-LIVE-PROTECTED</div>
             </div>
           </div>
         </div>

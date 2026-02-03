@@ -65,7 +65,7 @@ const App: React.FC = () => {
         message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
         isQuota = true;
       } else if (errStr === "PROVIDER_RATE_LIMIT") {
-        message = "Der KI-Coach wird gerade stark frequentiert. Bitte warte einen Moment und klicke dann erneut auf 'Plan erstellen'.";
+        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
         isQuota = false;
       } else {
         message = "Fehler bei der Erstellung. Bitte prüfe deine Internetverbindung oder versuche es erneut.";
@@ -175,7 +175,7 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.8-STABLE</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter">VER. 1.0.9-PREVIEW-OPEN</div>
             </div>
           </div>
         </div>
