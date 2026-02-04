@@ -26,10 +26,9 @@ const App: React.FC = () => {
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
   const [isRetrievalModalOpen, setIsRetrievalModalOpen] = useState(false);
   
-  // App Version für Footer
   const hostname = window.location.hostname;
   const isPreview = hostname.includes('webcontainer.io') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
-  const appVersion = isPreview ? '1.1.2-PREVIEW' : '1.1.2-LIVE';
+  const appVersion = isPreview ? '1.1.3-PREVIEW' : '1.1.3-LIVE';
 
   const handleStart = () => {
     setError(null);
@@ -46,21 +45,25 @@ const App: React.FC = () => {
       const generatedPlan = await generateTrainingPlan(userProfile);
       setPlan(generatedPlan);
       
-      // Automatisch in Firestore speichern
-      await savePlan(generatedPlan, userProfile);
-      
+      // UI-Zustand sofort aktualisieren, damit der Spinner verschwindet
       setState(AppState.DISPLAY);
+      
+      // Speichern im Hintergrund (Fire & Forget), blockiert die UI nicht
+      savePlan(generatedPlan, userProfile).catch(err => {
+        console.warn("Hintergrund-Speicherung fehlgeschlagen:", err);
+      });
+      
     } catch (err: any) {
       console.error("Plan Error:", err);
       let message = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.";
       let isRateLimit = false;
-      const errStr = err.message || "";
+      const errStr = (err.message || "").toLowerCase();
       
-      if (errStr === "LOCAL_DAILY_LIMIT_REACHED") {
-        message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
+      if (errStr.includes("local_daily_limit_reached")) {
+        message = "Tageslimit erreicht: Du hast heute bereits das Maximum an Plänen erstellt. Morgen geht es weiter!";
         isRateLimit = true;
-      } else if (errStr.includes("PROVIDER_RATE_LIMIT") || errStr.includes("RATE_LIMIT")) {
-        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
+      } else if (errStr.includes("provider_rate_limit") || errStr.includes("rate_limit")) {
+        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und versuche es gleich noch einmal.";
         isRateLimit = true;
       }
       

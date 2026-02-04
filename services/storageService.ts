@@ -1,6 +1,6 @@
 
 import { db } from '../firebase.ts';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { FullTrainingPlan, UserProfile } from '../types.ts';
 
 export interface SavedPlan {
@@ -20,7 +20,7 @@ export async function savePlan(plan: FullTrainingPlan, profile: UserProfile): Pr
       createdAt: new Date().toISOString()
     });
   } catch (error) {
-    console.error("Error saving plan:", error);
+    console.error("Storage Error beim Speichern:", error);
   }
 }
 
@@ -36,7 +36,7 @@ export async function getPlanByCode(code: string): Promise<SavedPlan | null> {
     }
     return null;
   } catch (error) {
-    console.error("Error retrieving plan:", error);
+    console.error("Storage Error beim Abrufen:", error);
     throw error;
   }
 }

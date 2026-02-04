@@ -10,7 +10,11 @@ export interface SavedPlan {
 }
 
 export async function savePlan(plan: FullTrainingPlan, profile: UserProfile): Promise<void> {
-  if (!db) return;
+  // Wenn die Datenbank nicht initialisiert ist (z.B. fehlender API-Key), brechen wir sofort ab.
+  if (!db) {
+    console.warn("Storage: Datenbank nicht verfügbar. Plan wird nicht dauerhaft gespeichert.");
+    return;
+  }
 
   try {
     const planRef = doc(db, 'training_plans', plan.planCode);
@@ -19,8 +23,10 @@ export async function savePlan(plan: FullTrainingPlan, profile: UserProfile): Pr
       profile,
       createdAt: new Date().toISOString()
     });
+    console.log(`Plan ${plan.planCode} erfolgreich gespeichert.`);
   } catch (error) {
-    console.error("Error saving plan:", error);
+    // Fehler beim Speichern loggen, aber die App-Funktionalität nicht unterbrechen.
+    console.error("Storage Error beim Speichern:", error);
   }
 }
 
@@ -36,7 +42,7 @@ export async function getPlanByCode(code: string): Promise<SavedPlan | null> {
     }
     return null;
   } catch (error) {
-    console.error("Error retrieving plan:", error);
+    console.error("Storage Error beim Abrufen:", error);
     throw error;
   }
 }
