@@ -31,20 +31,26 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, profile, onRese
   const athleteLabel = profile.gender === 'weiblich' ? 'Athletin' : 'Athlet';
   const hasKennzahlen = profile.ftp || profile.maxHeartRate;
 
-  // Filter gender if "keine Angabe"
   const athleteDetails = [
     profile.gender && profile.gender !== 'keine Angabe' ? profile.gender : null,
     profile.age ? `${profile.age} Jahre` : null,
     profile.weight ? `${profile.weight} kg` : null
   ].filter(Boolean).join(', ');
 
-  // Heuristic: if MaxHR exactly matches formula, mark it as estimated
   const isEstimatedHR = profile.maxHeartRate && profile.age && profile.maxHeartRate === (220 - profile.age);
 
   return (
     <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
         <div className="flex-grow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
+              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Plan-ID</span>
+              <span className="text-sm font-mono font-black text-white">{plan.planCode}</span>
+            </div>
+            <div className="h-px w-8 bg-white/10"></div>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Persönlicher Trainingsplan</span>
+          </div>
           <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase leading-none italic">
             {plan.planTitle}
           </h1>
@@ -58,10 +64,8 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, profile, onRese
         </button>
       </div>
 
-      {/* Zusammengefasste Datenkachel */}
       <div className="bg-slate-900 border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
-          {/* TSS */}
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center shrink-0">
               <i className="fas fa-bolt text-yellow-500"></i>
@@ -72,31 +76,29 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, profile, onRese
             </div>
           </div>
 
-          {/* Volumen */}
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
               <i className="fas fa-clock text-blue-500"></i>
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Volumen</div>
-              <div className="text-xl font-black tracking-tight">{plan.targetMetrics.weeklyVolume} / Woche</div>
+              <div className="text-xl font-black tracking-tight">
+                {plan.targetMetrics.weeklyVolume}
+                {!plan.targetMetrics.weeklyVolume.includes('(') && ' / Woche'}
+              </div>
             </div>
           </div>
 
-          {/* Athlet Info */}
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
               <i className="fas fa-user text-emerald-500"></i>
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{athleteLabel}</div>
-              <div className="text-xl font-black tracking-tight">
-                {athleteDetails}
-              </div>
+              <div className="text-xl font-black tracking-tight">{athleteDetails}</div>
             </div>
           </div>
 
-          {/* Kennzahlen (bedingt) */}
           {hasKennzahlen && (
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
@@ -116,7 +118,6 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, profile, onRese
         </div>
       </div>
 
-      {/* Wochen-Navigation */}
       <div className="grid grid-cols-2 lg:flex gap-3 mb-10">
         {plan.weeks.map((w, idx) => (
           <button
@@ -132,14 +133,15 @@ const TrainingPlanDisplay: React.FC<PlanDisplayProps> = ({ plan, profile, onRese
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-px flex-grow bg-white/5"></div>
-            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Tages-Sessions</h3>
-            <div className="h-px flex-grow bg-white/5"></div>
+          <div className="flex items-center gap-6 mb-8">
+            <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-white italic shrink-0">Tages-Sessions</h3>
+            <div className="h-px flex-grow bg-white/10"></div>
           </div>
-          {currentWeek.sessions.map((session, idx) => (
-            <SessionCard key={idx} session={session} />
-          ))}
+          <div className="space-y-4">
+            {currentWeek.sessions.map((session, idx) => (
+              <SessionCard key={idx} session={session} />
+            ))}
+          </div>
         </div>
 
         <div className="space-y-8 hidden lg:block">
@@ -177,13 +179,12 @@ const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
   const timeStr = `${h}:${m.toString().padStart(2, '0')}`;
 
   return (
-    <div className={`group glass rounded-2xl p-6 border transition-all ${isRest ? 'opacity-40 grayscale' : 'border-white/5 hover:border-emerald-500/50'}`}>
+    <div className={`group glass rounded-2xl p-6 border-2 transition-all ${isRest ? 'opacity-40 grayscale' : 'border-white/10 hover:border-emerald-500'}`}>
       <div className="flex flex-col sm:flex-row gap-6">
-        {/* Enlarged Box for time details */}
-        <div className="flex-shrink-0 flex flex-col items-center justify-center w-full sm:w-28 h-20 sm:h-24 rounded-2xl bg-slate-950 border border-white/5 group-hover:border-emerald-500/20 transition-colors shadow-inner">
-          <span className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest">{session.day}</span>
+        <div className="flex-shrink-0 flex flex-col items-center justify-center w-full sm:w-28 h-20 sm:h-24 rounded-2xl bg-slate-950 border border-white/10 group-hover:border-emerald-500/30 transition-colors shadow-inner">
+          <span className="text-[10px] font-black text-white uppercase mb-1 tracking-widest">{session.day}</span>
           <span className="text-2xl font-black leading-none text-white tracking-tighter">{timeStr}</span>
-          <span className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">Std.</span>
+          <span className="text-[10px] font-black text-white mt-1 uppercase tracking-widest">Std.</span>
         </div>
         <div className="flex-grow min-w-0">
           <div className="flex items-start justify-between gap-3 mb-2">
@@ -200,9 +201,9 @@ const SessionCard: React.FC<{ session: TrainingSession }> = ({ session }) => {
           </div>
           <p className="text-slate-400 text-sm leading-relaxed mb-4">{session.description}</p>
           {session.intervals && (
-            <div className="flex items-start gap-2 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10">
-              <i className="fas fa-bolt text-[10px] text-emerald-500 mt-1"></i>
-              <span className="text-xs font-bold text-emerald-400/80 italic whitespace-pre-wrap">{session.intervals}</span>
+            <div className="flex items-start gap-3 bg-emerald-500/10 p-5 rounded-2xl border-[3px] border-emerald-500/40 shadow-lg shadow-emerald-500/5">
+              <i className="fas fa-bolt text-sm text-white mt-1.5 shadow-sm"></i>
+              <span className="text-sm md:text-base font-black text-white italic whitespace-pre-wrap leading-tight tracking-tight">{session.intervals}</span>
             </div>
           )}
         </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserProfile, TrainingGoal, FitnessLevel, Equipment, Gender, TrainingPreference } from '../types.ts';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, DAY_OPTIONS, EQUIPMENT_OPTIONS, GENDER_OPTIONS, PREFERENCE_OPTIONS } from '../constants.ts';
@@ -15,6 +16,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [editingFields, setEditingFields] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<{ ftp?: boolean; hr?: boolean; details?: boolean }>({});
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [personalConsentGiven, setPersonalConsentGiven] = useState(false);
   
   const [profile, setProfile] = useState<UserProfile>({
     goal: '' as TrainingGoal,
@@ -98,6 +101,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
   const hrValidation = getHrValidation(profile.maxHeartRate);
 
   const isStep4Blocked = () => {
+    if (metricsKnowledge !== 'none' && !consentGiven) return true;
+
     if (metricsKnowledge === 'both') {
       return !profile.ftp || !profile.maxHeartRate || ftpValidation?.type === 'error' || hrValidation?.type === 'error';
     }
@@ -117,7 +122,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
   };
 
   const handleStep5Next = () => {
-    if (profile.age && profile.weight && profile.gender) {
+    const isStep5Complete = profile.age !== undefined && profile.weight !== undefined && profile.gender !== '' && personalConsentGiven;
+    if (isStep5Complete) {
       setErrors({});
       nextStep();
     }
@@ -261,7 +267,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
             </div>
             <div className="grid grid-cols-1 gap-2">
               {[{ id: 'both', label: 'Ich kenne beide Werte' }, { id: 'ftp', label: 'Ich kenne nur meine FTP' }, { id: 'hr', label: 'Ich kenne nur meinen Maximalpuls' }, { id: 'none', label: 'Ich kenne keinen der Werte' }].map(opt => (
-                <button key={opt.id} onClick={() => { setMetricsKnowledge(opt.id as MetricsKnowledge); setTouched(new Set()); setEditingFields(new Set()); setErrors({}); }} className={`p-4 rounded-xl text-left border-2 transition-all ${metricsKnowledge === opt.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}>{opt.label}</button>
+                <button key={opt.id} onClick={() => { setMetricsKnowledge(opt.id as MetricsKnowledge); setTouched(new Set()); setEditingFields(new Set()); setErrors({}); setConsentGiven(false); }} className={`p-4 rounded-xl text-left border-2 transition-all ${metricsKnowledge === opt.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold' : 'border-white/5 bg-white/5 text-slate-400'}`}>{opt.label}</button>
               ))}
             </div>
             <div className="space-y-4 pt-2">
@@ -285,6 +291,29 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                 </div>
               )}
             </div>
+
+            {/* Consent Checkbox */}
+            {metricsKnowledge !== 'none' && (
+              <div className="pt-4 border-t border-white/5 animate-fade-in">
+                <label className="flex items-start gap-4 cursor-pointer group">
+                  <div className="relative flex items-center h-6">
+                    <input 
+                      type="checkbox" 
+                      checked={consentGiven} 
+                      onChange={(e) => setConsentGiven(e.target.checked)}
+                      className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-white/20 bg-white/5 transition-all checked:bg-emerald-500 checked:border-emerald-500"
+                    />
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-950 opacity-0 transition-opacity peer-checked:opacity-100">
+                      <i className="fas fa-check text-[10px]"></i>
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-400 leading-snug group-hover:text-slate-300 transition-colors">
+                    Ich bin einverstanden, dass meine sportwissenschaftlichen Daten zur Erstellung des Trainingsplans gespeichert werden.
+                  </span>
+                </label>
+              </div>
+            )}
+
             <div className="flex justify-between items-center gap-4 pt-6">
               <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
               <button onClick={handleStep4Next} className={primaryBtnClass} disabled={isStep4Blocked()}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>
@@ -292,7 +321,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
           </div>
         );
       case 5:
-        const isStep5Complete = profile.age !== undefined && profile.weight !== undefined && profile.gender !== '';
+        const isStep5Complete = profile.age !== undefined && profile.weight !== undefined && profile.gender !== '' && personalConsentGiven;
         return (
           <div className="space-y-8">
             <div className="space-y-2">
@@ -311,6 +340,27 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, onCancel }) => 
                 ))}
               </div>
             </div>
+
+            {/* Personal Data Consent Checkbox */}
+            <div className="pt-4 border-t border-white/5 animate-fade-in">
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <div className="relative flex items-center h-6">
+                  <input 
+                    type="checkbox" 
+                    checked={personalConsentGiven} 
+                    onChange={(e) => setPersonalConsentGiven(e.target.checked)}
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-white/20 bg-white/5 transition-all checked:bg-emerald-500 checked:border-emerald-500"
+                  />
+                  <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-950 opacity-0 transition-opacity peer-checked:opacity-100">
+                    <i className="fas fa-check text-[10px]"></i>
+                  </div>
+                </div>
+                <span className="text-xs text-slate-400 leading-snug group-hover:text-slate-300 transition-colors">
+                  Ich bin einverstanden, dass meine personenbezogenen Daten zur Erstellung des Trainingsplans genutzt und gespeichert werden.
+                </span>
+              </label>
+            </div>
+
             <div className="flex justify-between items-center gap-4 pt-6">
               <button onClick={prevStep} className={secondaryBtnClass}><i className="fas fa-arrow-left mr-2"></i> Zurück</button>
               <button onClick={handleStep5Next} className={primaryBtnClass} disabled={!isStep5Complete}>Weiter <i className="fas fa-arrow-right ml-2"></i></button>

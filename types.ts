@@ -1,3 +1,4 @@
+
 export type TrainingGoal = 'Gran Fondo' | 'Kriterium' | 'Fitness' | 'All-round';
 export type FitnessLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type Equipment = 'Smart Trainer' | 'Power Meter' | 'Heart Rate Monitor';
@@ -36,6 +37,7 @@ export interface WeeklyPlan {
 
 export interface FullTrainingPlan {
   planTitle: string;
+  planCode: string;
   summary: string;
   targetMetrics: {
     estimatedTSS: number;

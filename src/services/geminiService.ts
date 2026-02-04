@@ -4,6 +4,15 @@ import { UserProfile, FullTrainingPlan } from "../types.ts";
 
 const DAILY_LIMIT = 500;
 
+function generatePlanCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Ohne O, I, 0, 1 für bessere Lesbarkeit
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function checkAndIncrementUsage(): { allowed: boolean; count: number } {
   const today = new Date().toISOString().split('T')[0];
   const storageKey = 'velocoach_daily_usage';
@@ -38,13 +47,14 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
     Befolge strikt:
     1. PERIODISIERUNG: 3:1 Rhythmus (Woche 4 Regeneration).
-    2. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
-    3. INTENSITÄTSZONEN (Puls-basiert): Z1 (<60% MaxHR), Z2 (60-70%), Z3 (70-80%), Z4 (80-90%), Z5 (90-100%).
-    4. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten.
-    5. LEISTUNGSWERTE: IMMER konkrete Zielwerte in 'intervals' angeben (Watt oder BPM).
-    6. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender || 'männlich'}.
-    7. ${preferenceInstruction}
-    8. SPRACHE: Deutsch.
+    2. WOCHEN-FOKUS: Nutze aussagekräftige Begriffe (z.B. "Grundlagenausdauer", "Regeneration", "Kraftausdauer", "Schwellentraining"). WICHTIG: Verwende korrekte deutsche Komposita (zusammengesetzte Nomen ohne Leerzeichen), z.B. "Grundlagenausdauer" statt "Grundlagen Ausdauer". Halte es so kurz wie möglich.
+    3. INTENSITÄTSZONEN (FTP-basiert): Z1 (<55%), Z2 (56-75%), Z3 (76-90%), Z4 (91-105%), Z5 (106-120%).
+    4. INTENSITÄTSZONEN (Puls-basiert): Z1 (<60% MaxHR), Z2 (60-70%), Z3 (70-80%), Z4 (80-90%), Z5 (90-100%).
+    5. EINHEITEN-STRUKTUR: Jede Einheit MUSS Warm-up und Cool-down enthalten.
+    6. LEISTUNGSWERTE: IMMER konkrete Zielwerte in 'intervals' angeben (Watt oder BPM).
+    7. PHYSIOLOGIE: Berücksichtige Alter, Gewicht und ${profile.gender || 'männlich'}.
+    8. ${preferenceInstruction}
+    9. SPRACHE: Deutsch.
   `;
 
   const prompt = `
@@ -113,7 +123,12 @@ export async function generateTrainingPlan(profile: UserProfile): Promise<FullTr
 
     const text = response.text;
     if (!text) throw new Error("EMPTY_RESPONSE");
-    return JSON.parse(text) as FullTrainingPlan;
+    
+    const plan = JSON.parse(text) as FullTrainingPlan;
+    // Plan Code generieren und zuweisen
+    plan.planCode = generatePlanCode();
+    
+    return plan;
   } catch (err: any) {
     console.error("Gemini API Error:", err);
     const errStr = err.toString().toLowerCase();

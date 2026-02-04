@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
 import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
 import Loader from './components/Loader.tsx';
 import LegalView from './components/LegalView.tsx';
-import AuthModal from './components/AuthModal.tsx';
+import PlanRetrievalModal from './components/PlanRetrievalModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
-import { auth } from './firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+import { savePlan, getPlanByCode } from './services/storageService.ts';
 
 enum AppState {
   LANDING,
@@ -22,52 +20,16 @@ enum AppState {
 }
 
 const App: React.FC = () => {
-  const [hasAccess, setHasAccess] = useState(false);
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isRetrievalModalOpen, setIsRetrievalModalOpen] = useState(false);
   
-  // Umgebungserkennung
+  // App Version für Footer
   const hostname = window.location.hostname;
   const isPreview = hostname.includes('webcontainer.io') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
-  const appVersion = isPreview ? '1.0.9-PREVIEW-OPEN' : '1.0.9-LIVE-PROTECTED';
-
-  useEffect(() => {
-    // Wenn Preview-Umgebung -> Sofortiger Zugriff
-    if (isPreview) {
-      setHasAccess(true);
-      return;
-    }
-
-    // Wenn Live-Umgebung -> Passwort-Logik
-    const isAlreadyAuth = localStorage.getItem('app_access_granted') === 'true';
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessKey = urlParams.get('key');
-    const SECRET_PW = 'max-testet-1909';
-
-    if (accessKey === SECRET_PW || isAlreadyAuth) {
-      setHasAccess(true);
-      localStorage.setItem('app_access_granted', 'true');
-      if (accessKey) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    } else {
-      setHasAccess(false);
-    }
-  }, [isPreview]);
-
-  useEffect(() => {
-    if (auth) {
-      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser as User | null);
-      });
-      return () => unsubscribe();
-    }
-  }, []);
+  const appVersion = isPreview ? '1.1.2-PREVIEW' : '1.1.2-LIVE';
 
   const handleStart = () => {
     setError(null);
@@ -83,6 +45,10 @@ const App: React.FC = () => {
     try {
       const generatedPlan = await generateTrainingPlan(userProfile);
       setPlan(generatedPlan);
+      
+      // Automatisch in Firestore speichern
+      await savePlan(generatedPlan, userProfile);
+      
       setState(AppState.DISPLAY);
     } catch (err: any) {
       console.error("Plan Error:", err);
@@ -103,41 +69,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRetrievePlan = async (code: string) => {
+    const result = await getPlanByCode(code);
+    if (result) {
+      setPlan(result.plan);
+      setProfile(result.profile);
+      setState(AppState.DISPLAY);
+    } else {
+      throw new Error("NOT_FOUND");
+    }
+  };
+
   const handleReset = () => {
     setPlan(null);
     setProfile(null);
     setState(AppState.LANDING);
     setError(null);
   };
-
-  const handleLogout = () => auth && signOut(auth);
-
-  const openAuth = (mode: 'login' | 'register') => {
-    setAuthMode(mode);
-    setIsAuthModalOpen(true);
-  };
-
-  // Passwort-Sperre (Nur wenn nicht Preview)
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-          <i className="fas fa-lock text-slate-950 text-2xl"></i>
-        </div>
-        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">
-          VELOCOACH.<span className="text-emerald-500">AI</span>
-        </h1>
-        <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-[10px] mb-8">
-          Beta Access Restricted
-        </p>
-        <div className="max-w-xs p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
-          <p className="text-slate-400 text-sm font-medium leading-relaxed">
-            Der Zugriff auf die Live-Anwendung ist derzeit nur für autorisierte Tester möglich.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
@@ -150,33 +98,13 @@ const App: React.FC = () => {
             <span className="font-extrabold text-lg sm:text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3">
-            {!user ? (
-              <button 
-                onClick={() => openAuth('login')}
-                className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
-              >
-                Login
-              </button>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Eingeloggt</span>
-                  <span className="text-xs font-bold text-slate-300">{user.displayName || 'Athlet'}</span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-[10px] sm:text-xs font-bold hover:text-red-400 hover:border-red-400/30 transition-all"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+          <div className="hidden sm:block">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50">Beta Version</span>
           </div>
         </div>
       </nav>
 
-      <main className="flex-grow pt-16 flex flex-col overflow-hidden">
+      <main className="flex-grow pt-16 flex flex-col overflow-hidden relative">
         {error && (
           <div className="max-w-xl mx-auto mt-6 px-4 w-full z-50">
             <div className={`p-4 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-red-500/10 border-red-500/30 text-red-500'} border rounded-2xl flex items-start gap-4 shadow-2xl backdrop-blur-xl animate-fade-in`}>
@@ -192,7 +120,7 @@ const App: React.FC = () => {
         )}
 
         <div className="flex-grow flex flex-col justify-center relative">
-          {state === AppState.LANDING && <Hero onStart={handleStart} />}
+          {state === AppState.LANDING && <Hero onStart={handleStart} onOpenPlan={() => setIsRetrievalModalOpen(true)} />}
           {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />}
           {state === AppState.LOADING && <Loader />}
           {state === AppState.DISPLAY && plan && profile && <TrainingPlanDisplay plan={plan} profile={profile} onReset={handleReset} />}
@@ -230,10 +158,10 @@ const App: React.FC = () => {
         </div>
       </footer>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        initialMode={authMode} 
+      <PlanRetrievalModal 
+        isOpen={isRetrievalModalOpen} 
+        onClose={() => setIsRetrievalModalOpen(false)} 
+        onRetrieve={handleRetrievePlan} 
       />
     </div>
   );

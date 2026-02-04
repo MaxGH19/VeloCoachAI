@@ -1,10 +1,12 @@
+
 import React from 'react';
 
 interface HeroProps {
   onStart: () => void;
+  onOpenPlan: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onStart }) => {
+const Hero: React.FC<HeroProps> = ({ onStart, onOpenPlan }) => {
   return (
     <div className="relative overflow-hidden pt-8 pb-12 md:pt-16 md:pb-20">
       {/* Hintergrund-Blobs, die bis zum unteren Rand strahlen */}
@@ -35,8 +37,11 @@ const Hero: React.FC<HeroProps> = ({ onStart }) => {
           >
             Trainingsplan erstellen
           </button>
-          <button className="w-full sm:w-auto px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-center text-slate-300 font-semibold">
-            Mehr erfahren
+          <button 
+            onClick={onOpenPlan}
+            className="w-full sm:w-auto px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-center text-slate-300 font-semibold"
+          >
+            Plan öffnen
           </button>
         </div>
       </div>

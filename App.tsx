@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Hero from './components/Hero.tsx';
 import Questionnaire from './components/Questionnaire.tsx';
 import TrainingPlanDisplay from './components/TrainingPlanDisplay.tsx';
 import Loader from './components/Loader.tsx';
 import LegalView from './components/LegalView.tsx';
-import AuthModal from './components/AuthModal.tsx';
+import PlanRetrievalModal from './components/PlanRetrievalModal.tsx';
 import { UserProfile, FullTrainingPlan } from './types.ts';
 import { generateTrainingPlan } from './services/geminiService.ts';
-import { auth } from './firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+import { savePlan, getPlanByCode } from './services/storageService.ts';
 
 enum AppState {
   LANDING,
@@ -25,19 +23,13 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.LANDING);
   const [plan, setPlan] = useState<FullTrainingPlan | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [error, setError] = useState<{ message: string; isQuota: boolean } | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-
-  useEffect(() => {
-    if (auth) {
-      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser as User | null);
-      });
-      return () => unsubscribe();
-    }
-  }, []);
+  const [error, setError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
+  const [isRetrievalModalOpen, setIsRetrievalModalOpen] = useState(false);
+  
+  // App Version für Footer
+  const hostname = window.location.hostname;
+  const isPreview = hostname.includes('webcontainer.io') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const appVersion = isPreview ? '1.1.2-PREVIEW' : '1.1.2-LIVE';
 
   const handleStart = () => {
     setError(null);
@@ -53,15 +45,38 @@ const App: React.FC = () => {
     try {
       const generatedPlan = await generateTrainingPlan(userProfile);
       setPlan(generatedPlan);
+      
+      // Automatisch in Firestore speichern
+      await savePlan(generatedPlan, userProfile);
+      
       setState(AppState.DISPLAY);
     } catch (err: any) {
-      console.error("Plan Generation Error:", err);
-      let message = "Ein unerwarteter Fehler ist aufgetreten.";
-      if (err.message === "LOCAL_DAILY_LIMIT_REACHED") {
-        message = "Tageslimit erreicht.";
+      console.error("Plan Error:", err);
+      let message = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.";
+      let isRateLimit = false;
+      const errStr = err.message || "";
+      
+      if (errStr === "LOCAL_DAILY_LIMIT_REACHED") {
+        message = "Tageslimit erreicht: Du hast heute bereits 500 Pläne erstellt. Morgen geht es weiter!";
+        isRateLimit = true;
+      } else if (errStr.includes("PROVIDER_RATE_LIMIT") || errStr.includes("RATE_LIMIT")) {
+        message = "Der KI-Coach ist gerade sehr beschäftigt. Bitte warte kurz und klicke dann erneut auf 'Plan erstellen'.";
+        isRateLimit = true;
       }
-      setError({ message, isQuota: false });
+      
+      setError({ message, isRateLimit });
       setState(AppState.QUESTIONNAIRE);
+    }
+  };
+
+  const handleRetrievePlan = async (code: string) => {
+    const result = await getPlanByCode(code);
+    if (result) {
+      setPlan(result.plan);
+      setProfile(result.profile);
+      setState(AppState.DISPLAY);
+    } else {
+      throw new Error("NOT_FOUND");
     }
   };
 
@@ -70,13 +85,6 @@ const App: React.FC = () => {
     setProfile(null);
     setState(AppState.LANDING);
     setError(null);
-  };
-
-  const handleLogout = () => auth && signOut(auth);
-
-  const openAuth = (mode: 'login' | 'register') => {
-    setAuthMode(mode);
-    setIsAuthModalOpen(true);
   };
 
   return (
@@ -89,19 +97,30 @@ const App: React.FC = () => {
             </div>
             <span className="font-extrabold text-lg sm:text-xl tracking-tighter uppercase text-white italic">VELOCOACH.<span className="text-emerald-500">AI</span></span>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {!user ? (
-              <button onClick={() => openAuth('login')} className="px-6 py-2 bg-emerald-500 text-slate-950 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-400 transition-all">Login</button>
-            ) : (
-              <button onClick={handleLogout} className="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 rounded-lg text-[10px] sm:text-xs font-bold">Logout</button>
-            )}
+          
+          <div className="hidden sm:block">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50">Beta Version</span>
           </div>
         </div>
       </nav>
 
       <main className="flex-grow pt-16 flex flex-col overflow-hidden relative">
+        {error && (
+          <div className="max-w-xl mx-auto mt-6 px-4 w-full z-50">
+            <div className={`p-4 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-red-500/10 border-red-500/30 text-red-500'} border rounded-2xl flex items-start gap-4 shadow-2xl backdrop-blur-xl animate-fade-in`}>
+              <div className="flex-grow">
+                <p className="text-[10px] font-black uppercase tracking-widest mb-1">{error.isRateLimit ? 'Limit' : 'Fehler'}</p>
+                <p className="text-sm font-bold leading-relaxed">{error.message}</p>
+              </div>
+              <button onClick={() => setError(null)} className="text-slate-500 hover:text-white transition-colors">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex-grow flex flex-col justify-center relative">
-          {state === AppState.LANDING && <Hero onStart={handleStart} />}
+          {state === AppState.LANDING && <Hero onStart={handleStart} onOpenPlan={() => setIsRetrievalModalOpen(true)} />}
           {state === AppState.QUESTIONNAIRE && <Questionnaire onSubmit={handleSubmit} onCancel={handleCancel} />}
           {state === AppState.LOADING && <Loader />}
           {state === AppState.DISPLAY && plan && profile && <TrainingPlanDisplay plan={plan} profile={profile} onReset={handleReset} />}
@@ -133,13 +152,17 @@ const App: React.FC = () => {
                 <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-emerald-400 transition-colors">Datenschutz</button>
                 <button onClick={() => setState(AppState.IMPRINT)} className="hover:text-emerald-400 transition-colors">Impressum</button>
               </div>
-              <div className="text-slate-600 text-mono uppercase tracking-tighter text-[10px] font-bold">VER. 1.0.9-PREVIEW-OPEN</div>
+              <div className="text-slate-600 text-mono uppercase tracking-tighter text-[10px] font-bold">{appVersion}</div>
             </div>
           </div>
         </div>
       </footer>
 
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode={authMode} />
+      <PlanRetrievalModal 
+        isOpen={isRetrievalModalOpen} 
+        onClose={() => setIsRetrievalModalOpen(false)} 
+        onRetrieve={handleRetrievePlan} 
+      />
     </div>
   );
 };

@@ -37,6 +37,7 @@ export interface WeeklyPlan {
 
 export interface FullTrainingPlan {
   planTitle: string;
+  planCode: string;
   summary: string;
   targetMetrics: {
     estimatedTSS: number;
